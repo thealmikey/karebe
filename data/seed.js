@@ -14,7 +14,8 @@
     "Vodka",
     "Gin",
     "Champagne",
-    "Local Spirits"
+    "Local Spirits",
+    "Keg"
   ],
   products: [
     {
@@ -47,11 +48,23 @@
       name: "Smirnoff Red",
       category: "Vodka",
       description: "Neutral spirit for easy mixing.",
-      image: "https://images.unsplash.com/photo-1613207144881-4f86f5f7a4ec?auto=format&fit=crop&w=700&q=70",
+      image: "https://images.pexels.com/photos/1552630/pexels-photo-1552630.jpeg?auto=compress&cs=tinysrgb&w=800",
       popular: false,
       newArrival: false,
       variants: [
         { id: "v4", volume: "750ml", price: 1800, stock: 30 }
+      ]
+    },
+    {
+      id: "p4",
+      name: "Keg Beer",
+      category: "Keg",
+      description: "Freshly tapped keg, perfect for chill sessions.",
+      image: "https://images.pexels.com/photos/1267696/pexels-photo-1267696.jpeg?auto=compress&cs=tinysrgb&w=800",
+      popular: true,
+      newArrival: true,
+      variants: [
+        { id: "v5", volume: "Per Glass", price: 80, stock: 500 }
       ]
     }
   ],

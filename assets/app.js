@@ -1,14 +1,58 @@
 ﻿(function () {
   const STORAGE_KEY = "karebe_state_v1";
 
+  function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function reconcileWithSeed(state) {
+    const seed = window.KAREBE_SEED;
+    if (!seed) return state;
+    const next = clone(state);
+
+    // Keep hardcoded admin credentials aligned with seed.
+    next.admin = clone(seed.admin);
+
+    next.categories = Array.isArray(next.categories) ? next.categories : [];
+    seed.categories.forEach((c) => {
+      if (!next.categories.includes(c)) next.categories.push(c);
+    });
+
+    next.products = Array.isArray(next.products) ? next.products : [];
+    const seedProductsById = {};
+    seed.products.forEach((p) => {
+      seedProductsById[p.id] = p;
+    });
+
+    next.products = next.products.map((product) => {
+      if (product.id === "p3" && seedProductsById.p3) {
+        // Ensure Smirnoff Red uses the corrected image.
+        return { ...product, image: seedProductsById.p3.image };
+      }
+      return product;
+    });
+
+    // Ensure Keg product exists for existing users with old localStorage state.
+    if (!next.products.find((p) => p.id === "p4") && seedProductsById.p4) {
+      next.products.push(clone(seedProductsById.p4));
+    }
+
+    return next;
+  }
+
   function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      const seed = JSON.parse(JSON.stringify(window.KAREBE_SEED));
+      const seed = clone(window.KAREBE_SEED);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
       return seed;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    const reconciled = reconcileWithSeed(parsed);
+    if (JSON.stringify(parsed) !== JSON.stringify(reconciled)) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(reconciled));
+    }
+    return reconciled;
   }
 
   function saveState(state) {
