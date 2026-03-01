@@ -58,13 +58,6 @@
       onShiftUserId: "u_karura_admin"
     }
   ],
-  taxonomies: {
-    categories: ["Wine", "Whiskey", "Vodka", "Gin", "Champagne", "Local Spirits", "Keg"],
-    paymentStatuses: ["PENDING", "PAID"],
-    deliveryStatuses: ["ASSIGNED", "PICKED_UP", "ON_THE_WAY", "DELIVERED"],
-    orderSources: ["CALL", "SMS", "WHATSAPP"],
-    paymentMethods: ["MPESA_DARAJA", "CASH", "CARD"]
-  },
   paymentInfrastructure: {
     provider: "safaricom-daraja",
     environment: "sandbox",

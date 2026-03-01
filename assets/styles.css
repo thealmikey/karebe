@@ -24,6 +24,21 @@ body {
   color: var(--text);
 }
 
+body[data-page="admin"] {
+  --bg: #f8f4ee;
+  --surface: #fffaf3;
+  --surface-2: #f7efe5;
+  --text: #2f2520;
+  --muted: #6f6258;
+  --accent: #de7f51;
+  --gold: #f0b35d;
+  --ok: #4f9a6d;
+  --warn: #c38b43;
+  --danger: #ca6461;
+  --shadow: 0 8px 20px rgba(94, 67, 41, 0.12);
+  background: radial-gradient(circle at top right, #fbe7d6 0%, #f8f4ee 45%);
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -146,6 +161,14 @@ input, select, button, textarea {
   font-size: 0.9rem;
 }
 
+body[data-page="admin"] input,
+body[data-page="admin"] select,
+body[data-page="admin"] textarea {
+  background: #fff;
+  border-color: #d6c6b5;
+  color: var(--text);
+}
+
 button {
   background: linear-gradient(140deg, var(--accent), #7a162a);
   border: 0;
@@ -153,9 +176,20 @@ button {
   cursor: pointer;
 }
 
+body[data-page="admin"] button {
+  background: linear-gradient(140deg, #e59462, #d8754f);
+  color: #fff;
+}
+
 button.secondary {
   background: #2a1f24;
   border: 1px solid #4f3e46;
+}
+
+body[data-page="admin"] button.secondary {
+  background: #fff;
+  color: #5e4d40;
+  border-color: #d7c6b6;
 }
 
 .section-title {
@@ -191,6 +225,10 @@ th, td {
   border: 1px solid #3f3037;
   border-radius: var(--radius);
   padding: 11px;
+}
+
+body[data-page="admin"] .kpi {
+  border-color: #e4d5c4;
 }
 
 .kpi h3 {
@@ -265,9 +303,91 @@ th, td {
   font-size: 1.15rem;
 }
 
+.admin-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-panel .card-body {
+  padding: 14px;
+}
+
+.admin-toolbar {
+  align-items: center;
+}
+
+.admin-toolbar #adminIdentity {
+  white-space: nowrap;
+}
+
+.admin-map {
+  width: 100%;
+  height: 300px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  background: #eaeaea;
+  border: 1px solid #ddcbb9;
+}
+
+.admin-help {
+  margin: 0 0 8px;
+}
+
+.admin-insights {
+  margin-top: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+body[data-page="admin"] .section-title {
+  margin-top: 0;
+  color: #b86f3f;
+}
+
+body[data-page="admin"] .card {
+  border-color: #e5d6c6;
+}
+
+body[data-page="admin"] .controls {
+  border-color: #e5d6c6;
+}
+
+body[data-page="admin"] .nav a {
+  border-color: #dccbb9;
+}
+
+body[data-page="admin"] .badge {
+  border-color: #d8c6b4;
+}
+
+body[data-page="admin"] .table-wrap {
+  border-color: #e3d3c4;
+}
+
+body[data-page="admin"] th,
+body[data-page="admin"] td {
+  border-bottom-color: #eadccc;
+}
+
 @media (max-width: 640px) {
   .header { align-items: flex-start; flex-direction: column; }
   .card img { height: 140px; }
   .promo-grid { grid-template-columns: 1fr; }
   .promo-grid img { min-height: 150px; }
+  .actions { flex-wrap: wrap; }
+  .actions a,
+  .actions button {
+    flex: 1 1 calc(50% - 8px);
+  }
+  .controls {
+    grid-template-columns: 1fr;
+  }
+  .admin-panel .card-body {
+    padding: 12px;
+  }
+  .admin-map {
+    height: 220px;
+  }
+  body[data-page="admin"] table {
+    min-width: 640px;
+  }
 }

@@ -3,6 +3,8 @@
   const ADMIN_SESSION_KEY = "karebe_admin_session";
   const RIDER_SESSION_KEY = "karebe_rider_id";
   const CUSTOMER_BRANCH_KEY = "karebe_customer_branch";
+  const PAYMENT_STATUSES = ["PENDING", "PAID"];
+  const DELIVERY_STATUSES = ["ASSIGNED", "PICKED_UP", "ON_THE_WAY", "DELIVERED"];
 
   function clone(v) {
     return JSON.parse(JSON.stringify(v));
@@ -34,35 +36,26 @@
     return String(phone || "").replace(/[^\d]/g, "");
   }
 
-  function defaults() {
-    return {
-      taxonomies: {
-        categories: ["Wine", "Whiskey", "Vodka", "Gin", "Champagne", "Local Spirits", "Keg"],
-        paymentStatuses: ["PENDING", "PAID"],
-        deliveryStatuses: ["ASSIGNED", "PICKED_UP", "ON_THE_WAY", "DELIVERED"],
-        paymentMethods: ["MPESA_DARAJA", "CASH", "CARD"]
-      }
-    };
-  }
-
   function reconcile(state, seed) {
     const next = clone(state || {});
-    const d = defaults();
     next.users = Array.isArray(next.users) ? next.users : clone(seed.users || []);
     next.branches = Array.isArray(next.branches) ? next.branches : clone(seed.branches || []);
-    next.taxonomies = next.taxonomies && typeof next.taxonomies === "object" ? next.taxonomies : {};
-    Object.keys(d.taxonomies).forEach((k) => {
-      next.taxonomies[k] = Array.isArray(next.taxonomies[k])
-        ? next.taxonomies[k]
-        : clone((seed.taxonomies && seed.taxonomies[k]) || d.taxonomies[k]);
-    });
-    next.categories = Array.isArray(next.categories) ? next.categories : [];
-    next.taxonomies.categories.forEach((c) => {
-      if (!next.categories.includes(c)) next.categories.push(c);
+    const stateCategories = Array.isArray(next.categories) ? next.categories : [];
+    const seedCategories = Array.isArray(seed.categories) ? seed.categories : [];
+    const legacyTaxonomyCategories =
+      next.taxonomies && Array.isArray(next.taxonomies.categories) ? next.taxonomies.categories : [];
+    next.categories = [];
+    [...stateCategories, ...seedCategories, ...legacyTaxonomyCategories].forEach((c) => {
+      const value = String(c || "").trim();
+      if (value && !next.categories.includes(value)) next.categories.push(value);
     });
     next.products = Array.isArray(next.products) ? next.products : clone(seed.products || []);
     (seed.products || []).forEach((p) => {
       if (!next.products.find((x) => x.id === p.id)) next.products.push(clone(p));
+    });
+    next.products.forEach((p) => {
+      const category = String((p && p.category) || "").trim();
+      if (category && !next.categories.includes(category)) next.categories.push(category);
     });
     next.riders = Array.isArray(next.riders) ? next.riders : clone(seed.riders || []);
     next.orders = Array.isArray(next.orders) ? next.orders : [];
@@ -229,7 +222,7 @@
     const customerMeta = document.getElementById("customerMeta");
     const selectableOrders = document.getElementById("selectableOrders");
 
-    const categories = state.taxonomies.categories || state.categories;
+    const categories = state.categories || [];
     categorySel.innerHTML = `<option value="">All Categories</option>${categories.map((c) => `<option value="${c}">${c}</option>`).join("")}`;
     if (branchSel) {
       branchSel.innerHTML = state.branches.map((b) => `<option value="${b.id}">${b.location || b.name}</option>`).join("");
@@ -770,9 +763,11 @@
       };
     }
 
-    const categories = state.taxonomies.categories || state.categories;
-    const categorySel = document.getElementById("productCategory");
-    categorySel.innerHTML = categories.map((c) => `<option value="${c}">${c}</option>`).join("");
+    const categories = state.categories || [];
+    const categoryOptions = document.getElementById("productCategoryOptions");
+    if (categoryOptions) {
+      categoryOptions.innerHTML = categories.map((c) => `<option value="${c}"></option>`).join("");
+    }
 
     document.getElementById("productsTableBody").innerHTML =
       state.products
@@ -824,13 +819,17 @@
       fresh.products.push({
         id: uid("p"),
         name: document.getElementById("productName").value.trim(),
-        category: document.getElementById("productCategory").value,
+        category: document.getElementById("productCategory").value.trim(),
         description: document.getElementById("productDesc").value.trim(),
         image: imageUrl,
         popular: document.getElementById("productPopular").checked,
         newArrival: document.getElementById("productNew").checked,
         variants: [{ id: uid("v"), volume: document.getElementById("productVolume").value.trim(), price: Number(document.getElementById("productPrice").value), stock: Number(document.getElementById("productStock").value) }]
       });
+      const newCategory = document.getElementById("productCategory").value.trim();
+      if (newCategory && !fresh.categories.includes(newCategory)) {
+        fresh.categories.push(newCategory);
+      }
       saveState(fresh);
       location.reload();
     };
@@ -848,7 +847,7 @@
     const orderVariant = document.getElementById("orderVariant");
     orderVariant.innerHTML = variants.map((row) => `<option value="${row.product.id}|${row.variant.id}">${row.product.name} - ${row.variant.volume} (${fmtKES(row.variant.price)})</option>`).join("");
     const paymentSel = document.getElementById("orderPayment");
-    paymentSel.innerHTML = (state.taxonomies.paymentStatuses || ["PENDING", "PAID"]).map((p) => `<option value="${p}">${p.replaceAll("_", " ")}</option>`).join("");
+    paymentSel.innerHTML = PAYMENT_STATUSES.map((p) => `<option value="${p}">${p.replaceAll("_", " ")}</option>`).join("");
     document.getElementById("orderForm").onsubmit = (e) => {
       e.preventDefault();
       const fresh = loadState();
@@ -876,7 +875,7 @@
       const riderId = document.getElementById("assignRider").value;
       if (!orderId) return alert("No order available for assignment");
       const fresh = loadState();
-      const start = (fresh.taxonomies.deliveryStatuses || ["ASSIGNED"])[0];
+      const start = DELIVERY_STATUSES[0];
       fresh.deliveries.push({ id: uid("d"), orderId, riderId, status: start, timeline: [{ status: start, at: nowISO() }] });
       saveState(fresh);
       location.reload();
@@ -891,33 +890,6 @@
         const order = state.orders.find((o) => o.id === d.orderId);
         return `<tr><td>${d.id}</td><td>${rider ? rider.name : "Unknown"}</td><td>${order ? order.customerPhone : "-"}</td><td>${order ? order.items[0].productName : "-"}</td><td>${d.status}</td><td>${d.timeline[d.timeline.length - 1].at.replace("T", " ").slice(0, 16)}</td></tr>`;
       }).join("") || `<tr><td colspan="6">No deliveries.</td></tr>`;
-
-    const taxonomyGroup = document.getElementById("taxonomyGroup");
-    const taxonomyList = document.getElementById("taxonomyList");
-    const taxonomyValue = document.getElementById("taxonomyValue");
-    if (taxonomyGroup && taxonomyList && taxonomyValue) {
-      taxonomyGroup.innerHTML = Object.keys(state.taxonomies).map((k) => `<option value="${k}">${k}</option>`).join("");
-      const drawTax = () => {
-        const fresh = loadState();
-        const values = fresh.taxonomies[taxonomyGroup.value] || [];
-        taxonomyList.innerHTML = values.length ? values.map((v) => `<span class="badge">${v}</span>`).join(" ") : `<p class="small">No values yet.</p>`;
-      };
-      taxonomyGroup.onchange = drawTax;
-      drawTax();
-      document.getElementById("taxonomyForm").onsubmit = (e) => {
-        e.preventDefault();
-        const val = taxonomyValue.value.trim();
-        if (!val) return;
-        const fresh = loadState();
-        const key = taxonomyGroup.value;
-        fresh.taxonomies[key] = Array.isArray(fresh.taxonomies[key]) ? fresh.taxonomies[key] : [];
-        if (!fresh.taxonomies[key].includes(val)) fresh.taxonomies[key].push(val);
-        if (key === "categories" && !fresh.categories.includes(val)) fresh.categories.push(val);
-        saveState(fresh);
-        taxonomyValue.value = "";
-        drawTax();
-      };
-    }
 
     const shiftBranch = document.getElementById("shiftBranch");
     const shiftUser = document.getElementById("shiftUser");
@@ -1047,7 +1019,7 @@
       }
     };
 
-    const statuses = state.taxonomies.deliveryStatuses || ["ASSIGNED", "PICKED_UP", "ON_THE_WAY", "DELIVERED"];
+    const statuses = DELIVERY_STATUSES;
     const nextStatus = (s) => {
       const idx = statuses.indexOf(s);
       if (idx === -1 || idx >= statuses.length - 1) return null;
