@@ -81,6 +81,15 @@ a {
   padding: 8px 11px;
   border-radius: 999px;
   font-size: 0.85rem;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
+}
+
+body[data-page="customer"] .nav a[href="index.html"],
+body[data-page="admin"] .nav a[href="admin.html"],
+body[data-page="rider"] .nav a[href="rider.html"] {
+  border-color: transparent;
+  background: var(--accent);
+  color: #fff;
 }
 
 .grid {
@@ -151,6 +160,37 @@ a {
   gap: 10px;
 }
 
+.controls-priority {
+  margin-bottom: 10px;
+}
+
+.split-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.fit-button {
+  width: auto;
+  white-space: nowrap;
+  padding: 9px 12px;
+}
+
+.filters-card {
+  margin-bottom: 14px;
+}
+
+.filters-card summary {
+  cursor: pointer;
+  padding: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.filters-grid {
+  margin: 0 10px 10px;
+}
+
 input, select, button, textarea {
   width: 100%;
   border-radius: 10px;
@@ -174,6 +214,7 @@ button {
   border: 0;
   font-weight: 600;
   cursor: pointer;
+  transition: filter 0.16s ease, transform 0.08s ease, box-shadow 0.16s ease;
 }
 
 body[data-page="admin"] button {
@@ -190,6 +231,30 @@ body[data-page="admin"] button.secondary {
   background: #fff;
   color: #5e4d40;
   border-color: #d7c6b6;
+}
+
+button:hover,
+.nav a:hover {
+  filter: brightness(1.05);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
 
 .section-title {
@@ -267,6 +332,52 @@ body[data-page="admin"] .kpi {
   margin-top: 20px;
   color: var(--muted);
   font-size: 0.8rem;
+}
+
+.toast-root {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 999;
+  display: grid;
+  gap: 8px;
+  width: min(380px, calc(100vw - 28px));
+}
+
+.toast {
+  opacity: 0;
+  transform: translateY(8px);
+  border-radius: 12px;
+  border: 1px solid #4a3a41;
+  background: #1e1519;
+  color: #f8f2ee;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  box-shadow: var(--shadow);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+body[data-page="admin"] .toast {
+  background: #fff9f2;
+  color: #3f2f23;
+  border-color: #dfc9b2;
+}
+
+.toast.ok {
+  border-color: #2f8f65;
+}
+
+.toast.warn {
+  border-color: #b8772f;
+}
+
+.toast.danger {
+  border-color: #a23f46;
 }
 
 .cart-row {
@@ -438,6 +549,12 @@ body[data-page="admin"] td {
   }
   .controls {
     grid-template-columns: 1fr;
+  }
+  .split-row {
+    flex-direction: column;
+  }
+  .fit-button {
+    width: 100%;
   }
   .admin-panel .card-body {
     padding: 12px;

@@ -26,8 +26,8 @@
       <div class="card-body">
         <h2 class="section-title">Rider Login</h2>
         <form id="riderLoginForm" class="grid">
-          <input id="riderPhoneLogin" placeholder="Phone (+254...)" required />
-          <input id="riderPinLogin" placeholder="PIN" required />
+          <input id="riderPhoneLogin" placeholder="Phone (+254...)" autocomplete="username" aria-label="Rider phone number" required />
+          <input id="riderPinLogin" placeholder="PIN" autocomplete="current-password" aria-label="Rider PIN" required />
           <button type="submit">Login</button>
         </form>
       </div>
@@ -51,7 +51,7 @@
           <thead>
             <tr>
               <th>Delivery</th>
-              <th>Item</th>
+              <th>Items</th>
               <th>Status</th>
               <th>Last Updated</th>
             </tr>

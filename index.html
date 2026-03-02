@@ -23,24 +23,29 @@
       </nav>
     </header>
 
-    <section class="controls" style="align-items: center">
-      <div style="display:flex; gap:8px; width:100%; max-width:100%;">
-        <select id="branchSelect" style="flex:1"></select>
-        <button id="findNearestBranchBtn" title="Find nearest branch" style="padding: 0 12px; white-space:nowrap;">📍
-          Nearest</button>
+    <section class="controls controls-priority">
+      <div class="split-row">
+        <select id="branchSelect" aria-label="Select branch"></select>
+        <button id="findNearestBranchBtn" class="fit-button" title="Find nearest branch">Nearest</button>
       </div>
-      <select id="customerProfileSelect"></select>
-      <select id="categoryFilter"></select>
-      <input id="maxPrice" type="number" min="0" placeholder="Max price (KES)" value="100000" />
-      <select id="popularFilter">
-        <option value="">Popular: Any</option>
-        <option value="yes">Popular Only</option>
-      </select>
-      <select id="newFilter">
-        <option value="">New: Any</option>
-        <option value="yes">New Arrivals</option>
-      </select>
+      <select id="customerProfileSelect" aria-label="Select customer profile"></select>
     </section>
+
+    <details class="card filters-card">
+      <summary>Filter Catalog</summary>
+      <div class="controls filters-grid">
+        <select id="categoryFilter" aria-label="Filter by category"></select>
+        <input id="maxPrice" type="number" min="0" placeholder="Max price (KES)" value="100000" aria-label="Max price" />
+        <select id="popularFilter" aria-label="Filter by popularity">
+          <option value="">Popular: Any</option>
+          <option value="yes">Popular Only</option>
+        </select>
+        <select id="newFilter" aria-label="Filter by new arrivals">
+          <option value="">New: Any</option>
+          <option value="yes">New Arrivals</option>
+        </select>
+      </div>
+    </details>
     <p id="shiftContact" class="small"></p>
     <p id="activeTill" class="small"></p>
     <p id="customerMeta" class="small"></p>
@@ -73,26 +78,15 @@
           <strong id="cartTotal">KES 0</strong>
         </div>
         <div class="actions" style="margin-top:10px;">
+          <button id="cartCheckout">Checkout With M-Pesa (Mock)</button>
+        </div>
+        <div class="actions" style="margin-top:10px;">
           <button id="cartCall">Call</button>
           <button id="cartSms" class="secondary">SMS Cart</button>
           <button id="cartWhatsapp" class="secondary">WhatsApp Cart</button>
         </div>
         <div class="actions" style="margin-top:10px;">
           <button id="cartClear" class="secondary">Clear Cart</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card-body">
-        <h2 class="section-title" style="margin-top:0;">Order Card (Selected Cart Items)</h2>
-        <div id="orderCardItems" class="grid"></div>
-        <div class="row" style="margin-top:10px;">
-          <strong>Total</strong>
-          <strong id="orderCardTotal">KES 0</strong>
-        </div>
-        <div class="actions" style="margin-top:10px;">
-          <button id="orderCardCheckout">Checkout With M-Pesa Daraja (Mock)</button>
         </div>
       </div>
     </section>

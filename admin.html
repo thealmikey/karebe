@@ -26,12 +26,10 @@
       <div class="card-body">
         <h2 class="section-title">Secure Login</h2>
         <form id="adminLoginForm" class="grid">
-          <input id="adminUser" placeholder="Username" required />
-          <input id="adminPass" placeholder="Password" type="password" required />
+          <input id="adminUser" placeholder="Username" autocomplete="username" aria-label="Admin username" required />
+          <input id="adminPass" placeholder="Password" type="password" autocomplete="current-password" aria-label="Admin password" required />
           <button type="submit">Login</button>
         </form>
-        <p class="small">Super-admin(owner): karebe-owner / karebeowner1234</p>
-        <p class="small">Branch admins: karebe / karebe1234 and dante / dante1234</p>
       </div>
     </section>
 
@@ -76,10 +74,10 @@
           <p class="small admin-help">Click on the map to drop a pin for a new branch, then save it.</p>
           <div id="adminBranchMap" class="admin-map"></div>
           <form id="newBranchForm" class="controls">
-            <input id="newBranchName" placeholder="Branch Name (e.g. Westlands)" required />
-            <input id="newBranchPhone" placeholder="Phone (+254...)" required />
-            <input id="newBranchLat" placeholder="Latitude" readonly required />
-            <input id="newBranchLng" placeholder="Longitude" readonly required />
+            <input id="newBranchName" placeholder="Branch Name (e.g. Westlands)" aria-label="Branch name" required />
+            <input id="newBranchPhone" placeholder="Phone (+254...)" aria-label="Branch phone" required />
+            <input id="newBranchLat" placeholder="Latitude" aria-label="Branch latitude" readonly required />
+            <input id="newBranchLng" placeholder="Longitude" aria-label="Branch longitude" readonly required />
             <button type="submit">Create Branch</button>
           </form>
         </div>
@@ -89,11 +87,11 @@
         <div class="card-body">
           <h2 class="section-title">Branch Managers (Super Admin)</h2>
           <form id="managerForm" class="controls">
-            <input id="managerName" placeholder="Manager full name" required />
-            <input id="managerUsername" placeholder="Username" required />
-            <input id="managerPassword" type="password" placeholder="Password" required />
-            <input id="managerPhone" placeholder="Phone (+254...)" required />
-            <select id="managerBranch"></select>
+            <input id="managerName" placeholder="Manager full name" aria-label="Manager full name" required />
+            <input id="managerUsername" placeholder="Username" aria-label="Manager username" required />
+            <input id="managerPassword" type="password" placeholder="Password" aria-label="Manager password" required />
+            <input id="managerPhone" placeholder="Phone (+254...)" aria-label="Manager phone number" required />
+            <select id="managerBranch" aria-label="Manager branch"></select>
             <button type="submit">Add Branch Admin</button>
           </form>
           <div class="table-wrap">
@@ -116,10 +114,10 @@
         <div class="card-body">
           <h2 class="section-title">Till Infrastructure (Daraja)</h2>
           <form id="tillForm" class="controls">
-            <select id="tillBranch"></select>
-            <input id="tillNumber" placeholder="Till Number" required />
-            <input id="tillShortCode" placeholder="Business ShortCode" required />
-            <input id="tillAccountRef" placeholder="Account Reference" required />
+            <select id="tillBranch" aria-label="Till branch"></select>
+            <input id="tillNumber" placeholder="Till Number" aria-label="Till number" required />
+            <input id="tillShortCode" placeholder="Business ShortCode" aria-label="Business shortcode" required />
+            <input id="tillAccountRef" placeholder="Account Reference" aria-label="Account reference" required />
             <button type="submit">Save Till</button>
           </form>
           <div class="table-wrap">
@@ -177,15 +175,15 @@
         <div class="card-body">
           <h2 class="section-title">Add Product</h2>
           <form id="productForm" class="controls">
-            <input id="productName" placeholder="Product name" required />
-            <input id="productCategory" list="productCategoryOptions" placeholder="Category (e.g. beer, soft drink)" required />
+            <input id="productName" placeholder="Product name" aria-label="Product name" required />
+            <input id="productCategory" list="productCategoryOptions" placeholder="Category (e.g. beer, soft drink)" aria-label="Product category" required />
             <datalist id="productCategoryOptions"></datalist>
-            <input id="productVolume" placeholder="Volume (e.g. 750ml)" required />
-            <input id="productPrice" type="number" min="1" placeholder="Price KES" required />
-            <input id="productStock" type="number" min="0" placeholder="Stock qty" required />
+            <input id="productVolume" placeholder="Volume (e.g. 750ml)" aria-label="Product volume" required />
+            <input id="productPrice" type="number" min="1" placeholder="Price KES" aria-label="Product price in KES" required />
+            <input id="productStock" type="number" min="0" placeholder="Stock qty" aria-label="Product stock quantity" required />
             <label class="small">Product Image <span class="small">(leave empty for default)</span></label>
-            <input id="productImageFile" type="file" accept="image/*" />
-            <input id="productDesc" placeholder="Short description" required />
+            <input id="productImageFile" type="file" accept="image/*" aria-label="Product image file" />
+            <input id="productDesc" placeholder="Short description" aria-label="Product description" required />
             <label class="small"><input id="productPopular" type="checkbox" /> Popular</label>
             <label class="small"><input id="productNew" type="checkbox" /> New Arrival</label>
             <button type="submit">Save Product</button>
@@ -219,9 +217,9 @@
         <div class="card-body">
           <h2 class="section-title">Rider Management</h2>
           <form id="riderForm" class="controls">
-            <input id="riderName" placeholder="Rider full name" required />
-            <input id="riderPhone" placeholder="Phone (+254...)" required />
-            <input id="riderPin" placeholder="PIN" required />
+            <input id="riderName" placeholder="Rider full name" aria-label="Rider full name" required />
+            <input id="riderPhone" placeholder="Phone (+254...)" aria-label="Rider phone number" required />
+            <input id="riderPin" placeholder="PIN" aria-label="Rider PIN" required />
             <button type="submit">Add Rider</button>
           </form>
           <div class="table-wrap">
@@ -243,10 +241,10 @@
         <div class="card-body">
           <h2 class="section-title">Log Call Order</h2>
           <form id="orderForm" class="controls">
-            <select id="orderVariant"></select>
-            <input id="orderQty" type="number" min="1" value="1" required />
-            <input id="orderCustomer" placeholder="Customer phone" required />
-            <select id="orderPayment">
+            <select id="orderVariant" aria-label="Order product variant"></select>
+            <input id="orderQty" type="number" min="1" value="1" aria-label="Order quantity" required />
+            <input id="orderCustomer" placeholder="Customer phone" aria-label="Customer phone number" required />
+            <select id="orderPayment" aria-label="Order payment status">
               <option value="PENDING">Payment Pending</option>
               <option value="PAID">Paid</option>
             </select>
@@ -259,8 +257,8 @@
         <div class="card-body">
           <h2 class="section-title">Assign Delivery</h2>
           <form id="assignForm" class="controls">
-            <select id="assignOrder"></select>
-            <select id="assignRider"></select>
+            <select id="assignOrder" aria-label="Order to assign"></select>
+            <select id="assignRider" aria-label="Rider to assign"></select>
             <button type="submit">Assign Rider</button>
           </form>
         </div>
@@ -295,7 +293,7 @@
                 <tr>
                   <th>Order</th>
                   <th>Customer</th>
-                  <th>Item</th>
+                  <th>Items</th>
                   <th>Total</th>
                   <th>Payment</th>
                   <th>Date</th>
@@ -317,7 +315,7 @@
                   <th>Delivery</th>
                   <th>Rider</th>
                   <th>Customer</th>
-                  <th>Item</th>
+                  <th>Items</th>
                   <th>Status</th>
                   <th>Last Update</th>
                 </tr>
