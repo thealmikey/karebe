@@ -321,12 +321,12 @@ async function persistCartToDatabase(
   }>
 ): Promise<void> {
   // Delete existing cart items for this customer
-  await supabase.from('cart_items').delete().eq('customer_id', customerId);
+  await supabase.from('cart_items').delete().eq('user_id', customerId);
 
   // Insert new cart items
   if (items.length > 0) {
     const cartItems = items.map((item) => ({
-      customer_id: customerId,
+      user_id: customerId,
       branch_id: branchId,
       product_id: item.productId,
       variant_id: item.variantId,
@@ -425,7 +425,7 @@ export async function clearServerCart(customerId: string): Promise<boolean> {
     const { error } = await supabase
       .from('cart_items')
       .delete()
-      .eq('customer_id', customerId);
+      .eq('user_id', customerId);
 
     if (error) {
       throw new Error(`Failed to clear cart: ${error.message}`);

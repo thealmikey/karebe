@@ -324,11 +324,13 @@ export function ProductCard({
             </Button>
             <Button
               size="sm"
+              variant="outline"
               onClick={handleAddToCart}
               disabled={isOutOfStock}
+              className="aspect-square p-0"
+              title="Add to cart"
             >
-              <ShoppingCart className="h-4 w-4 mr-1" />
-              Add
+              <ShoppingCart className="h-4 w-4" />
             </Button>
           </div>
         )}

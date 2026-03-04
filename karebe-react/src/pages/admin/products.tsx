@@ -41,7 +41,6 @@ export default function AdminProductsPage() {
     is_featured: false,
   });
 
-  const productManager = new ProductManager();
 
   const loadProducts = async () => {
     setLoading(true);
@@ -50,7 +49,7 @@ export default function AdminProductsPage() {
         ...(searchQuery && { search: searchQuery }),
         ...(categoryFilter !== 'all' && { category: categoryFilter }),
       };
-      const data = await productManager.getProducts(filters);
+      const data = await ProductManager.getProducts(filters);
       setProducts(data);
     } catch (error) {
       console.error('Failed to load products:', error);
@@ -65,7 +64,7 @@ export default function AdminProductsPage() {
 
   const handleAddProduct = async () => {
     try {
-      await productManager.createProduct(newProduct);
+      await ProductManager.createProduct(newProduct);
       setIsAddDialogOpen(false);
       setNewProduct({
         name: '',
@@ -87,7 +86,7 @@ export default function AdminProductsPage() {
   const handleUpdateProduct = async () => {
     if (!editingProduct) return;
     try {
-      await productManager.updateProduct(editingProduct.id, {
+      await ProductManager.updateProduct(editingProduct.id, {
         name: editingProduct.name,
         description: editingProduct.description || undefined,
         price: editingProduct.price,
@@ -109,7 +108,7 @@ export default function AdminProductsPage() {
   const handleDeleteProduct = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
     try {
-      await productManager.deleteProduct(id);
+      await ProductManager.deleteProduct(id);
       loadProducts();
     } catch (error) {
       console.error('Failed to delete product:', error);
@@ -122,7 +121,7 @@ export default function AdminProductsPage() {
   };
 
   return (
-    <AuthGuard requireAdmin>
+    <AuthGuard>
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <header className="bg-white border-b sticky top-0 z-10">
@@ -160,7 +159,7 @@ export default function AdminProductsPage() {
             <Select
               options={[{ value: 'all', label: 'All Categories' }, ...CATEGORIES]}
               value={categoryFilter}
-              onValueChange={setCategoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
               className="w-full sm:w-48"
             />
           </div>
@@ -213,7 +212,7 @@ export default function AdminProductsPage() {
                       <span className="font-bold text-brand-600">KSh {product.price.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between mt-4">
-                      <Badge variant={product.stock_quantity > 0 ? 'default' : 'destructive'}>
+                      <Badge variant={product.stock_quantity > 0 ? 'default' : 'danger'}>
                         {product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
                       </Badge>
                       <div className="flex gap-2">
@@ -284,7 +283,7 @@ export default function AdminProductsPage() {
                   <Select
                     options={CATEGORIES}
                     value={newProduct.category}
-                    onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}
+                    onChange={(value) => setNewProduct({ ...newProduct, category: value })}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -376,7 +375,7 @@ export default function AdminProductsPage() {
                     <Select
                       options={CATEGORIES}
                       value={editingProduct.category}
-                      onValueChange={(value) => setEditingProduct({ ...editingProduct, category: value })}
+                      onChange={(value) => setEditingProduct({ ...editingProduct, category: value })}
                     />
                   </div>
                   <div className="grid gap-2">

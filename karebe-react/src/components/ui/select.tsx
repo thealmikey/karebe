@@ -30,6 +30,8 @@ export interface SelectProps
   wrapperClassName?: string;
   /** Size variant */
   size?: 'sm' | 'md' | 'lg';
+  /** Callback when value changes (alias for onChange) */
+  onValueChange?: (value: string) => void;
 }
 
 /**
@@ -62,6 +64,7 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       disabled,
       wrapperClassName,
       size = 'md',
+      onValueChange,
       ...props
     },
     ref
@@ -93,6 +96,10 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             id={selectId}
             ref={ref}
             disabled={disabled}
+            onChange={(e) => {
+              props.onChange?.(e);
+              onValueChange?.(e.target.value);
+            }}
             className={cn(
               'w-full appearance-none rounded-xl border bg-white px-4 pr-10 transition-all duration-200',
               'focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-400',
@@ -151,4 +158,3 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
 Select.displayName = 'Select';
 
 export { Select };
-export type { SelectOption };
