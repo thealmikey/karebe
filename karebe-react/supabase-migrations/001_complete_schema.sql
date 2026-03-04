@@ -30,6 +30,22 @@ BEGIN
     ON CONFLICT (id) DO NOTHING;
 
     -- =============================================================================
+    -- Create cart_items table (use TEXT for user_id to match existing IDs like "user-admin-001")
+    -- =============================================================================
+    CREATE TABLE IF NOT EXISTS cart_items (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        user_id TEXT NOT NULL,
+        product_id TEXT REFERENCES products(id) ON DELETE CASCADE,
+        variant_id TEXT REFERENCES product_variants(id) ON DELETE SET NULL,
+        quantity INTEGER NOT NULL DEFAULT 1,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    
+    CREATE INDEX IF NOT EXISTS idx_cart_items_user_id ON cart_items(user_id);
+    CREATE INDEX IF NOT EXISTS idx_cart_items_product_id ON cart_items(product_id);
+
+    -- =============================================================================
     -- Fix riders table - add missing columns
     -- =============================================================================
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'riders' AND column_name = 'whatsapp_number') THEN
