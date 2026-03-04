@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, CreditCard, MapPin, Check, Plus, Trash2, Star, AlertCircle } from 'lucide-react';
+import { Building2, CreditCard, MapPin, Check, Plus, Trash2, Star, AlertCircle, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,63 +8,154 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { BranchMpesaManager, MpesaConfig } from '@/features/admin/services/branch-mpesa-manager';
-import { AuthGuard } from '@/components/auth/auth-guard';
+import { AuthGuard } from '@/features/auth/components/auth-guard';
+import { supabase } from '@/lib/supabase';
+
+interface Branch {
+  id: string;
+  name: string;
+  address: string;
+  phone: string;
+  is_main: boolean;
+  is_active: boolean;
+  mpesa_shortcode: string;
+}
 
 export default function BranchConfigPage() {
-  const [configs, setConfigs] = useState<MpesaConfig[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newConfig, setNewConfig] = useState({
-    branchId: '',
-    tillNumber: '',
-    businessName: '',
-    phoneNumber: '',
-    isDefault: false,
-    serviceArea: '',
+  const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
+  const [newBranch, setNewBranch] = useState({
+    id: '',
+    name: '',
+    address: '',
+    phone: '',
+    is_main: false,
+    mpesa_shortcode: '',
   });
 
-  const mpesaManager = new BranchMpesaManager();
-
   useEffect(() => {
-    loadConfigs();
+    loadBranches();
   }, []);
 
-  const loadConfigs = async () => {
-    const allConfigs = await mpesaManager.getAllConfigs();
-    setConfigs(allConfigs);
+  const loadBranches = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('branches')
+        .select('*')
+        .order('is_main', { ascending: false })
+        .order('name');
+
+      if (error) throw error;
+      setBranches(data || []);
+    } catch (error) {
+      console.error('Failed to load branches:', error);
+      setBranches([
+        { id: 'main-branch', name: 'Main Branch', address: '123 Main St, Nairobi', phone: '+254712345678', is_main: true, is_active: true, mpesa_shortcode: '123456' }
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleAddConfig = async () => {
-    await mpesaManager.setMpesaConfig({
-      branchId: newConfig.branchId,
-      tillNumber: newConfig.tillNumber,
-      businessName: newConfig.businessName,
-      phoneNumber: newConfig.phoneNumber,
-      isDefault: newConfig.isDefault,
-      serviceArea: newConfig.serviceArea.split(',').map(s => s.trim()).filter(Boolean),
-    });
+  const handleAddBranch = async () => {
+    try {
+      const { error } = await supabase.from('branches').insert({
+        id: newBranch.id || `branch-${Date.now()}`,
+        name: newBranch.name,
+        address: newBranch.address,
+        phone: newBranch.phone,
+        is_main: newBranch.is_main,
+        is_active: true,
+        mpesa_shortcode: newBranch.mpesa_shortcode,
+      });
 
-    setIsAddDialogOpen(false);
-    setNewConfig({
-      branchId: '',
-      tillNumber: '',
-      businessName: '',
-      phoneNumber: '',
-      isDefault: false,
-      serviceArea: '',
-    });
-    loadConfigs();
+      if (error) throw error;
+
+      setIsAddDialogOpen(false);
+      setNewBranch({ id: '', name: '', address: '', phone: '', is_main: false, mpesa_shortcode: '' });
+      loadBranches();
+    } catch (error) {
+      console.error('Failed to add branch:', error);
+      alert('Failed to add branch. Please try again.');
+    }
   };
 
-  const handleDeactivate = async (branchId: string) => {
-    await mpesaManager.deactivateConfig(branchId);
-    loadConfigs();
+  const handleUpdateBranch = async () => {
+    if (!editingBranch) return;
+    
+    try {
+      const { error } = await supabase
+        .from('branches')
+        .update({
+          name: editingBranch.name,
+          address: editingBranch.address,
+          phone: editingBranch.phone,
+          is_main: editingBranch.is_main,
+          mpesa_shortcode: editingBranch.mpesa_shortcode,
+        })
+        .eq('id', editingBranch.id);
+
+      if (error) throw error;
+
+      setEditingBranch(null);
+      loadBranches();
+    } catch (error) {
+      console.error('Failed to update branch:', error);
+      alert('Failed to update branch. Please try again.');
+    }
   };
+
+  const handleSetMain = async (branchId: string) => {
+    try {
+      await supabase.from('branches').update({ is_main: false }).eq('is_main', true);
+      const { error } = await supabase.from('branches').update({ is_main: true }).eq('id', branchId);
+      if (error) throw error;
+      loadBranches();
+    } catch (error) {
+      console.error('Failed to set main branch:', error);
+    }
+  };
+
+  const handleDeleteBranch = async (branchId: string) => {
+    if (!confirm('Are you sure you want to delete this branch?')) return;
+    try {
+      const { error } = await supabase.from('branches').delete().eq('id', branchId);
+      if (error) throw error;
+      loadBranches();
+    } catch (error) {
+      console.error('Failed to delete branch:', error);
+    }
+  };
+
+  const handleToggleActive = async (branch: Branch) => {
+    try {
+      const { error } = await supabase
+        .from('branches')
+        .update({ is_active: !branch.is_active })
+        .eq('id', branch.id);
+      if (error) throw error;
+      loadBranches();
+    } catch (error) {
+      console.error('Failed to toggle branch status:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <AuthGuard>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
+        </div>
+      </AuthGuard>
+    );
+  }
 
   return (
-    <AuthGuard requireAdmin>
+    <AuthGuard>
       <div className="min-h-screen bg-gray-50">
-        {/* Header */}
         <header className="bg-white border-b sticky top-0 z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
@@ -74,7 +165,7 @@ export default function BranchConfigPage() {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">Branch Configuration</h1>
-                  <p className="text-sm text-gray-500">Manage M-Pesa till numbers per branch</p>
+                  <p className="text-sm text-gray-500">Manage branches and M-Pesa till numbers</p>
                 </div>
               </div>
               <Button onClick={() => setIsAddDialogOpen(true)}>
@@ -85,106 +176,85 @@ export default function BranchConfigPage() {
           </div>
         </header>
 
-        {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Default Config Alert */}
-          {configs.filter(c => c.isDefault).length === 0 && (
+          {!branches.some(b => b.is_main) && branches.length > 0 && (
             <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-amber-600" />
               <p className="text-amber-800">
-                <strong>No default M-Pesa config set.</strong> Please mark one branch as default for fallback.
+                <strong>No main branch set.</strong> Please mark one branch as main for fallback.
               </p>
             </div>
           )}
 
-          {/* Configs Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {configs.map((config) => (
-              <Card key={config.branchId} className={config.isDefault ? 'border-2 border-brand-500' : ''}>
+            {branches.map((branch) => (
+              <Card key={branch.id} className={branch.is_main ? 'border-2 border-brand-500' : ''}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div>
                       <CardTitle className="text-lg flex items-center gap-2">
-                        {config.businessName}
-                        {config.isDefault && (
+                        {branch.name}
+                        {branch.is_main && (
                           <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                         )}
                       </CardTitle>
-                      <CardDescription>{config.branchId}</CardDescription>
+                      <CardDescription className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {branch.address || 'No address'}
+                      </CardDescription>
                     </div>
                     <div className="flex gap-1">
-                      {config.isDefault ? (
-                        <Badge className="bg-yellow-100 text-yellow-800">Default</Badge>
-                      ) : (
+                      {branch.is_main ? (
+                        <Badge className="bg-yellow-100 text-yellow-800">Main</Badge>
+                      ) : branch.is_active ? (
                         <Badge variant="secondary">Active</Badge>
+                      ) : (
+                        <Badge variant="outline">Inactive</Badge>
                       )}
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Till Number */}
-                  <div className="flex items-center gap-3 p-3 bg-black text-white rounded-lg">
-                    <CreditCard className="h-5 w-5" />
-                    <div>
-                      <p className="text-xs text-gray-400">Till Number</p>
-                      <p className="text-xl font-bold font-mono">
-                        {config.tillNumber.replace(/(\d{3})(\d{3})/, '$1 $2')}
-                      </p>
+                  {branch.mpesa_shortcode && (
+                    <div className="flex items-center gap-3 p-3 bg-black text-white rounded-lg">
+                      <CreditCard className="h-5 w-5" />
+                      <div>
+                        <p className="text-xs text-gray-400">Till Number</p>
+                        <p className="text-xl font-bold font-mono">
+                          {branch.mpesa_shortcode.replace(/(\d{3})(\d{3})/, '$1 $2')}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
-                  {/* Details */}
-                  <div className="space-y-2 text-sm">
-                    {config.phoneNumber && (
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <span className="font-medium">Paybill Phone:</span>
-                        <span>{config.phoneNumber}</span>
-                      </div>
-                    )}
-                    
-                    {config.serviceArea && config.serviceArea.length > 0 && (
-                      <div className="flex items-start gap-2">
-                        <MapPin className="h-4 w-4 text-gray-400 mt-0.5" />
-                        <div>
-                          <span className="font-medium text-gray-600">Service Areas:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {config.serviceArea.map((area) => (
-                              <Badge key={area} variant="outline" className="text-xs">
-                                {area}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  {branch.phone && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <span className="font-medium">Phone:</span>
+                      <span>{branch.phone}</span>
+                    </div>
+                  )}
 
                   <Separator />
 
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    {!config.isDefault && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={async () => {
-                          await mpesaManager.setMpesaConfig({
-                            ...config,
-                            isDefault: true,
-                          });
-                          loadConfigs();
-                        }}
-                      >
+                  <div className="flex flex-wrap gap-2">
+                    {!branch.is_main && (
+                      <Button variant="outline" size="sm" onClick={() => handleSetMain(branch.id)}>
                         <Star className="h-4 w-4 mr-1" />
-                        Set Default
+                        Set Main
                       </Button>
                     )}
+                    <Button variant="outline" size="sm" onClick={() => setEditingBranch(branch)}>
+                      <Save className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleToggleActive(branch)}>
+                      {branch.is_active ? 'Deactivate' : 'Activate'}
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleDeactivate(config.branchId)}
+                      onClick={() => handleDeleteBranch(branch.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -194,14 +264,11 @@ export default function BranchConfigPage() {
             ))}
           </div>
 
-          {/* Empty State */}
-          {configs.length === 0 && (
+          {branches.length === 0 && (
             <div className="text-center py-16">
               <Building2 className="h-16 w-16 mx-auto text-gray-300 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No branches configured</h3>
-              <p className="text-gray-500 mb-4">
-                Add your first branch with its M-Pesa till number
-              </p>
+              <p className="text-gray-500 mb-4">Add your first branch with its M-Pesa till number</p>
               <Button onClick={() => setIsAddDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Branch
@@ -210,32 +277,47 @@ export default function BranchConfigPage() {
           )}
         </main>
 
-        {/* Add Branch Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Add New Branch</DialogTitle>
-              <DialogDescription>
-                Configure M-Pesa till number for a new branch location
-              </DialogDescription>
+              <DialogDescription>Configure a new branch location with M-Pesa till number</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="branchId">Branch ID</Label>
+                <Label htmlFor="branchId">Branch ID (optional)</Label>
                 <Input
                   id="branchId"
-                  placeholder="e.g., branch-westlands"
-                  value={newConfig.branchId}
-                  onChange={(e) => setNewConfig({ ...newConfig, branchId: e.target.value })}
+                  placeholder="Auto-generated if empty"
+                  value={newBranch.id}
+                  onChange={(e) => setNewBranch({ ...newBranch, id: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="businessName">Business Name</Label>
+                <Label htmlFor="businessName">Branch Name *</Label>
                 <Input
                   id="businessName"
                   placeholder="e.g., Karebe Westlands"
-                  value={newConfig.businessName}
-                  onChange={(e) => setNewConfig({ ...newConfig, businessName: e.target.value })}
+                  value={newBranch.name}
+                  onChange={(e) => setNewBranch({ ...newBranch, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  id="address"
+                  placeholder="e.g., Westlands, Nairobi"
+                  value={newBranch.address}
+                  onChange={(e) => setNewBranch({ ...newBranch, address: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  placeholder="e.g., +254712345678"
+                  value={newBranch.phone}
+                  onChange={(e) => setNewBranch({ ...newBranch, phone: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
@@ -243,57 +325,88 @@ export default function BranchConfigPage() {
                 <Input
                   id="tillNumber"
                   placeholder="e.g., 123456"
-                  value={newConfig.tillNumber}
-                  onChange={(e) => setNewConfig({ ...newConfig, tillNumber: e.target.value })}
-                />
-                <p className="text-xs text-gray-500">
-                  The till number customers will use for Lipa na M-Pesa
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Paybill Phone Number (Optional)</Label>
-                <Input
-                  id="phoneNumber"
-                  placeholder="e.g., +254712345678"
-                  value={newConfig.phoneNumber}
-                  onChange={(e) => setNewConfig({ ...newConfig, phoneNumber: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="serviceArea">Service Areas (comma-separated)</Label>
-                <Input
-                  id="serviceArea"
-                  placeholder="e.g., Westlands, Parklands, Riverside"
-                  value={newConfig.serviceArea}
-                  onChange={(e) => setNewConfig({ ...newConfig, serviceArea: e.target.value })}
+                  value={newBranch.mpesa_shortcode}
+                  onChange={(e) => setNewBranch({ ...newBranch, mpesa_shortcode: e.target.value })}
                 />
               </div>
               <div className="flex items-center gap-2">
                 <Switch
-                  id="isDefault"
-                  checked={newConfig.isDefault}
-                  onCheckedChange={(checked) => 
-                    setNewConfig({ ...newConfig, isDefault: checked })
-                  }
+                  id="isMain"
+                  checked={newBranch.is_main}
+                  onCheckedChange={(checked) => setNewBranch({ ...newBranch, is_main: checked })}
                 />
-                <Label htmlFor="isDefault">Set as default branch</Label>
+                <Label htmlFor="isMain">Set as main branch</Label>
               </div>
             </div>
             <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => setIsAddDialogOpen(false)}
-              >
+              <Button variant="outline" className="flex-1" onClick={() => setIsAddDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button
-                className="flex-1"
-                onClick={handleAddConfig}
-                disabled={!newConfig.branchId || !newConfig.tillNumber || !newConfig.businessName}
-              >
+              <Button className="flex-1" onClick={handleAddBranch} disabled={!newBranch.name}>
                 <Check className="h-4 w-4 mr-2" />
                 Save Branch
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!editingBranch} onOpenChange={(open) => !open && setEditingBranch(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Branch</DialogTitle>
+              <DialogDescription>Update branch details</DialogDescription>
+            </DialogHeader>
+            {editingBranch && (
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="editName">Branch Name *</Label>
+                  <Input
+                    id="editName"
+                    value={editingBranch.name}
+                    onChange={(e) => setEditingBranch({ ...editingBranch, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editAddress">Address</Label>
+                  <Input
+                    id="editAddress"
+                    value={editingBranch.address}
+                    onChange={(e) => setEditingBranch({ ...editingBranch, address: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editPhone">Phone Number</Label>
+                  <Input
+                    id="editPhone"
+                    value={editingBranch.phone}
+                    onChange={(e) => setEditingBranch({ ...editingBranch, phone: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="editTill">M-Pesa Till Number</Label>
+                  <Input
+                    id="editTill"
+                    value={editingBranch.mpesa_shortcode}
+                    onChange={(e) => setEditingBranch({ ...editingBranch, mpesa_shortcode: e.target.value })}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="editIsMain"
+                    checked={editingBranch.is_main}
+                    onCheckedChange={(checked) => setEditingBranch({ ...editingBranch, is_main: checked })}
+                  />
+                  <Label htmlFor="editIsMain">Set as main branch</Label>
+                </div>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setEditingBranch(null)}>
+                Cancel
+              </Button>
+              <Button className="flex-1" onClick={handleUpdateBranch} disabled={!editingBranch?.name}>
+                <Check className="h-4 w-4 mr-2" />
+                Update Branch
               </Button>
             </div>
           </DialogContent>
