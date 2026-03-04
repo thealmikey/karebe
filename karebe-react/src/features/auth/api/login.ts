@@ -61,11 +61,19 @@ async function demoLogin(credentials: LoginCredentials): Promise<LoginResponse> 
  * This is used for admin, super-admin, and rider logins
  */
 export async function login(credentials: LoginCredentials): Promise<LoginResponse> {
-  // Use demo auth if Supabase is not configured
-  if (!isSupabaseConfigured) {
-    return demoLogin(credentials);
+  // Try demo login first (works both in dev and production)
+  // This allows testing without requiring a backend API
+  const demoResult = await demoLogin(credentials);
+  if (demoResult.success) {
+    return demoResult;
   }
 
+  // If demo fails and Supabase is not configured, return demo error
+  if (!isSupabaseConfigured) {
+    return demoResult;
+  }
+
+  // Supabase is configured - try the API login
   try {
     // Call the admin login API endpoint
     const response = await fetch('/api/admin/login', {
