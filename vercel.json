@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd karebe-react && npm run build",
+  "buildCommand": "cd karebe-react && npx vite build",
   "outputDirectory": "karebe-react/dist",
   "installCommand": "cd karebe-react && npm install",
   "framework": "vite",

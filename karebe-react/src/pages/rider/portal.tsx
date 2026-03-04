@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   Package, 
   MapPin, 
@@ -17,7 +16,6 @@ import { AuthGuard } from '@/features/auth/components/auth-guard';
 import { useAuth } from '@/features/auth/hooks/use-auth';
 
 function RiderPortalContent() {
-  const navigate = useNavigate();
   const { logout, user } = useAuth();
   const [activeDeliveries, setActiveDeliveries] = useState([
     { id: '1', orderNumber: 'ORD-001', address: '123 Main St, Nairobi', status: 'pending', customerPhone: '+254712345678' },
