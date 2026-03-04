@@ -75,11 +75,11 @@ BEGIN
     CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 
     -- =============================================================================
-    -- Create order_items table
+    -- Create order_items table (use TEXT for order_id to match existing orders table)
     -- =============================================================================
     CREATE TABLE IF NOT EXISTS order_items (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+        order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
         product_id TEXT,
         product_name TEXT,
         quantity INTEGER NOT NULL,
@@ -90,11 +90,11 @@ BEGIN
     );
 
     -- =============================================================================
-    -- Create order_state_transitions table
+    -- Create order_state_transitions table (use TEXT for order_id)
     -- =============================================================================
     CREATE TABLE IF NOT EXISTS order_state_transitions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+        order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
         previous_status VARCHAR(50),
         new_status VARCHAR(50) NOT NULL,
         actor_type VARCHAR(20) NOT NULL,
@@ -159,11 +159,11 @@ BEGIN
     CREATE INDEX IF NOT EXISTS idx_products_is_available ON products(is_available);
 
     -- =============================================================================
-    -- Create product_variants table
+    -- Create product_variants table (use TEXT for id, UUID for product_id)
     -- =============================================================================
     CREATE TABLE IF NOT EXISTS product_variants (
         id TEXT PRIMARY KEY,
-        product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+        product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
         size TEXT,
         unit_size TEXT,
         price DECIMAL(10, 2),
@@ -175,10 +175,10 @@ BEGIN
     CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id);
 
     -- =============================================================================
-    -- Create order_locks table
+    -- Create order_locks table (use TEXT for order_id)
     -- =============================================================================
     CREATE TABLE IF NOT EXISTS order_locks (
-        order_id UUID PRIMARY KEY REFERENCES orders(id) ON DELETE CASCADE,
+        order_id TEXT PRIMARY KEY REFERENCES orders(id) ON DELETE CASCADE,
         admin_id UUID NOT NULL,
         session_id TEXT,
         locked_at TIMESTAMPTZ DEFAULT NOW(),
