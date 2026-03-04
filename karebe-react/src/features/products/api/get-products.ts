@@ -5,7 +5,11 @@ import type { PaginatedResponse } from '@/types';
 import type { SupabaseClient } from '@/lib/supabase';
 
 // Check if Supabase is properly configured
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+// Handle both VITE_ and legacy formats
+let supabaseUrl = import.meta.env.VITE_SUPABASE_URL || import.meta.env.SUPABASE_URL || '';
+if (supabaseUrl.includes('=')) {
+  supabaseUrl = supabaseUrl.split('=')[1] || '';
+}
 const isSupabaseConfigured = supabaseUrl.startsWith('https://') && supabaseUrl.includes('.supabase.co');
 
 // Helper to simulate network delay
