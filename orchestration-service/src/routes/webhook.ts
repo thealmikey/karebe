@@ -63,7 +63,7 @@ class WebhookProcessor {
       event_id: payload.event_id,
       event_type: 'mautrix_message',
       source: 'mautrix',
-      payload: payload as Record<string, unknown>,
+      payload: payload as unknown as Record<string, unknown>,
       status: 'processing',
     });
 

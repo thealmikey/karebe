@@ -149,9 +149,11 @@ router.get('/', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error getting orders', { error, query: req.query });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     res.status(500).json({
       success: false,
       error: 'Failed to get orders',
+      details: errorMessage,
     });
   }
 });
