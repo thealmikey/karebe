@@ -41,7 +41,6 @@ export function ProductCard({
     product.variants?.find((v) => v.isDefault) || product.variants?.[0]
   );
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [quantity, setQuantity] = useState(1);
 
   // Get display price
   const displayPrice = selectedVariant?.price || product.price;
@@ -60,11 +59,7 @@ export function ProductCard({
 
   const handleQuickAdd = () => {
     if (!isOutOfStock && onAddToCart) {
-      // Add the selected quantity
-      for (let i = 0; i < quantity; i++) {
-        onAddToCart(product, selectedVariant);
-      }
-      setQuantity(1); // Reset after adding
+      onAddToCart(product, selectedVariant);
     }
   };
 
@@ -101,15 +96,15 @@ export function ProductCard({
           {/* Badges */}
           <div className="absolute left-3 top-3 flex flex-col gap-2">
             {product.isNewArrival && (
-              <Badge variant="accent" size="sm">New</Badge>
+              <Badge variant="info" size="sm">New</Badge>
             )}
             {product.isOnSale && comparePrice && (
-              <Badge variant="error" size="sm">
+              <Badge variant="danger" size="sm">
                 Sale
               </Badge>
             )}
             {isOutOfStock && (
-              <Badge variant="neutral" size="sm">Out of Stock</Badge>
+              <Badge variant="secondary" size="sm">Out of Stock</Badge>
             )}
             {isLowStock && (
               <Badge variant="warning" size="sm">Low Stock</Badge>
@@ -190,42 +185,18 @@ export function ProductCard({
             </div>
 
             {showActions && (
-              <div className="flex items-center gap-1">
-                {/* Quantity selector */}
-                <div className="flex items-center border rounded">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-2 py-1 text-brand-600 hover:bg-brand-50"
-                    disabled={quantity <= 1}
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    max={stockQuantity}
-                    value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, Math.min(stockQuantity, parseInt(e.target.value) || 1)))}
-                    className="w-10 text-center text-sm border-x py-1"
-                  />
-                  <button
-                    onClick={() => setQuantity(Math.min(stockQuantity, quantity + 1))}
-                    className="px-2 py-1 text-brand-600 hover:bg-brand-50"
-                    disabled={quantity >= stockQuantity}
-                  >
-                    +
-                  </button>
-                </div>
-
-                <Button
-                  size="sm"
-                  variant="primary"
+              <div className="flex items-center justify-end">
+                <button
                   onClick={handleQuickAdd}
                   disabled={isOutOfStock}
-                  className="ml-1"
+                  className="relative flex-shrink-0 h-10 w-10 rounded-full bg-brand-600 text-white shadow-sm hover:bg-brand-700 hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  aria-label="Add to cart"
                 >
-                  <Plus className="h-4 w-4" /> Add
-                </Button>
+                  <ShoppingCart className="h-5 w-5" />
+                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center justify-center">
+                    <Plus className="h-3 w-3" />
+                  </span>
+                </button>
               </div>
             )}
           </div>

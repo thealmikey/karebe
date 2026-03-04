@@ -1,17 +1,42 @@
 import { supabase } from '@/lib/supabase';
 
+// Category mapping - frontend labels to database IDs
+const CATEGORY_MAP: Record<string, string> = {
+  'Wine': 'cat-wines',
+  'Whisky': 'cat-spirits',
+  'Whiskey': 'cat-spirits',
+  'Vodka': 'cat-spirits',
+  'Gin': 'cat-spirits',
+  'Rum': 'cat-spirits',
+  'Brandy': 'cat-spirits',
+  'Tequila': 'cat-spirits',
+  'Spirit': 'cat-spirits',
+  'Spirits': 'cat-spirits',
+  'Beer': 'cat-beers',
+  'Champagne': 'cat-champagne',
+  'Cider': 'cat-ciders',
+  'Ciders': 'cat-ciders',
+  'Mixers': 'cat-mixers',
+  'Ready to Drink': 'cat-mixers',
+  'Non-Alcoholic': 'cat-mixers',
+  'Soft Drink': 'cat-mixers',
+};
+
 export interface Product {
   id: string;
   name: string;
   description: string | null;
   price: number;
-  category: string;
+  category_id: string | null;
+  category_name?: string;
   stock_quantity: number;
-  image_url: string | null;
+  image: string | null;
+  image_url?: string;
   unit_size: string | null;
   alcohol_content: number | null;
-  brand: string | null;
   is_featured: boolean;
+  is_available: boolean;
+  is_visible: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -29,51 +54,74 @@ export interface ProductCreateInput {
   description?: string;
   price: number;
   category: string;
-  stock_quantity: number;
+  stock_quantity?: number;
   image_url?: string;
   unit_size?: string;
   alcohol_content?: number;
-  brand?: string;
   is_featured?: boolean;
 }
 
 export class ProductManager {
+  /**
+   * Convert frontend category label to database category_id
+   */
+  static getCategoryId(categoryLabel: string): string {
+    return CATEGORY_MAP[categoryLabel] || 'cat-mixers';
+  }
+
+  /**
+   * Get category label from category_id
+   */
+  static getCategoryLabel(categoryId: string | null): string {
+    const entry = Object.entries(CATEGORY_MAP).find(([_, id]) => id === categoryId);
+    return entry ? entry[0] : 'Unknown';
+  }
   static async getProducts(filters?: ProductFilters): Promise<Product[]> {
-    let query = supabase.from('products').select('*');
+    let query = supabase
+      .from('products')
+      .select('*, categories(name)')
+      .order('created_at', { ascending: false });
 
     if (filters?.category) {
-      query = query.eq('category', filters.category);
+      const categoryId = this.getCategoryId(filters.category);
+      query = query.eq('category_id', categoryId);
     }
 
     if (filters?.search) {
-      query = query.ilike('name', `%${filters.search}%`);
+      query = query.ilike('name', `%${filters?.search}%`);
     }
 
     if (filters?.minPrice !== undefined) {
-      query = query.gte('price', filters.minPrice);
+      query = query.gte('price', filters?.minPrice);
     }
 
     if (filters?.maxPrice !== undefined) {
-      query = query.lte('price', filters.maxPrice);
+      query = query.lte('price', filters?.maxPrice);
     }
 
     if (filters?.inStock) {
       query = query.gt('stock_quantity', 0);
     }
 
-    const { data, error } = await query.order('created_at', { ascending: false });
+    const { data, error } = await query;
 
     if (error) {
       throw new Error(`Failed to fetch products: ${error.message}`);
     }
 
-    return data || [];
+    // Map category_id to category_name for frontend display
+    return (data || []).map(product => ({
+      ...product,
+      category: product.categories?.name || 'Unknown',
+      category_name: product.categories?.name || 'Unknown',
+      image_url: product.image,
+    }));
   }
 
   static async getProductById(id: string): Promise<Product | null> {
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select('*, categories(name)')
       .eq('id', id)
       .single();
 
@@ -82,54 +130,112 @@ export class ProductManager {
       throw new Error(`Failed to fetch product: ${error.message}`);
     }
 
-    return data;
+    return {
+      ...data,
+      category: data.categories?.name || 'Unknown',
+      category_name: data.categories?.name || 'Unknown',
+      image_url: data.image,
+    };
   }
 
   static async createProduct(input: ProductCreateInput): Promise<Product> {
-    const { data, error } = await supabase
+    const categoryId = this.getCategoryId(input.category);
+    
+    // Create the product
+    const { data: product, error: productError } = await supabase
       .from('products')
       .insert({
-        ...input,
+        name: input.name,
+        description: input.description || null,
+        price: input.price,
+        category_id: categoryId,
+        image: input.image_url || null,
+        stock_quantity: input.stock_quantity || 0,
+        is_featured: input.is_featured || false,
+        is_available: true,
+        is_visible: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .select()
       .single();
 
-    if (error) {
-      throw new Error(`Failed to create product: ${error.message}`);
+    if (productError) {
+      throw new Error(`Failed to create product: ${productError.message}`);
     }
 
-    if (!data) {
-      throw new Error('Failed to create product: No data returned');
+    // If unit_size is provided, create a product variant
+    if (input.unit_size) {
+      const { error: variantError } = await supabase
+        .from('product_variants')
+        .insert({
+          id: `${product.id}-var-${Date.now()}`,
+          product_id: product.id,
+          volume: input.unit_size,
+          price: input.price,
+          stock: input.stock_quantity || 0,
+          is_default: true,
+          created_at: new Date().toISOString(),
+        });
+
+      if (variantError) {
+        console.error('Failed to create variant:', variantError.message);
+      }
     }
 
-    return data;
+    return {
+      ...product,
+      category: input.category,
+      category_name: input.category,
+      image_url: product.image,
+    };
   }
 
   static async updateProduct(id: string, updates: Partial<ProductCreateInput>): Promise<Product> {
+    // Build update object with proper database field names
+    const dbUpdates: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.price !== undefined) dbUpdates.price = updates.price;
+    if (updates.stock_quantity !== undefined) dbUpdates.stock_quantity = updates.stock_quantity;
+    if (updates.is_featured !== undefined) dbUpdates.is_featured = updates.is_featured;
+    if (updates.image_url !== undefined) dbUpdates.image = updates.image_url;
+    if (updates.category !== undefined) dbUpdates.category_id = this.getCategoryId(updates.category);
+
     const { data, error } = await supabase
       .from('products')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
+      .update(dbUpdates)
       .eq('id', id)
-      .select()
+      .select('*, categories(name)')
       .single();
 
     if (error) {
       throw new Error(`Failed to update product: ${error.message}`);
     }
 
-    if (!data) {
-      throw new Error('Failed to update product: No data returned');
-    }
-
-    return data;
+    return {
+      ...data,
+      category: data.categories?.name || 'Unknown',
+      category_name: data.categories?.name || 'Unknown',
+      image_url: data.image,
+    };
   }
 
   static async deleteProduct(id: string): Promise<void> {
+    // First delete variants
+    const { error: variantError } = await supabase
+      .from('product_variants')
+      .delete()
+      .eq('product_id', id);
+
+    if (variantError) {
+      console.error('Failed to delete variants:', variantError.message);
+    }
+
+    // Then delete product
     const { error } = await supabase
       .from('products')
       .delete()
@@ -155,11 +261,7 @@ export class ProductManager {
       throw new Error(`Failed to update stock: ${error.message}`);
     }
 
-    if (!data) {
-      throw new Error('Failed to update stock: No data returned');
-    }
-
-    return data;
+    return { ...data, image_url: data.image };
   }
 
   static async uploadProductImage(file: File): Promise<string> {
@@ -182,17 +284,42 @@ export class ProductManager {
     return publicUrl;
   }
 
-  static async getCategories(): Promise<string[]> {
+  /**
+   * Get all categories from the database
+   */
+  static async getCategories(): Promise<{ id: string; name: string }[]> {
     const { data, error } = await supabase
-      .from('products')
-      .select('category')
-      .order('category');
+      .from('categories')
+      .select('id, name')
+      .order('sort_order');
 
     if (error) {
       throw new Error(`Failed to fetch categories: ${error.message}`);
     }
 
-    const categories = [...new Set(data?.map(p => p.category))];
-    return categories;
+    return data || [];
+  }
+
+  /**
+   * Get product variants for a product
+   */
+  static async getProductVariants(productId: string): Promise<{
+    id: string;
+    volume: string;
+    price: number;
+    stock: number;
+    is_default: boolean;
+  }[]> {
+    const { data, error } = await supabase
+      .from('product_variants')
+      .select('*')
+      .eq('product_id', productId)
+      .order('created_at');
+
+    if (error) {
+      throw new Error(`Failed to fetch variants: ${error.message}`);
+    }
+
+    return data || [];
   }
 }

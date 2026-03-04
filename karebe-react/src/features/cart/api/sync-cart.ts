@@ -320,8 +320,17 @@ async function persistCartToDatabase(
     validatedPrice: number;
   }>
 ): Promise<void> {
+  // DEBUG: Log what's being persisted
+  console.log('[Cart Debug] persistCartToDatabase called with customerId:', customerId);
+  console.log('[Cart Debug] branchId:', branchId);
+  console.log('[Cart Debug] items count:', items.length);
+  
   // Delete existing cart items for this customer
-  await supabase.from('cart_items').delete().eq('user_id', customerId);
+  console.log('[Cart Debug] Deleting existing cart items for user_id:', customerId);
+  const deleteResult = await supabase.from('cart_items').delete().eq('user_id', customerId);
+  if (deleteResult.error) {
+    console.error('[Cart Debug] Delete error:', deleteResult.error);
+  }
 
   // Insert new cart items
   if (items.length > 0) {
@@ -331,9 +340,11 @@ async function persistCartToDatabase(
       product_id: item.productId,
       variant_id: item.variantId,
       quantity: item.quantity,
-      unit_price: item.validatedPrice,
+      // Note: cart_items schema doesn't have unit_price, need to fetch from product
       created_at: new Date().toISOString(),
     }));
+
+    console.log('[Cart Debug] Inserting cart items:', JSON.stringify(cartItems, null, 2));
 
     const { error } = await supabase.from('cart_items').insert(cartItems);
 
@@ -362,13 +373,34 @@ export async function fetchCart(customerId: string): Promise<Cart | null> {
   }
 
   try {
-    const { data: cartItems, error } = await supabase
+    // DEBUG: Log the query parameters being used
+    console.log('[Cart Debug] fetchCart called with customerId:', customerId);
+    console.log('[Cart Debug] Supabase URL configured:', !!supabaseUrl, supabaseUrl?.substring(0, 20) + '...');
+    console.log('[Cart Debug] isSupabaseConfigured:', isSupabaseConfigured);
+    
+    // Check if Supabase client exists
+    if (!supabase) {
+      console.error('[Cart Debug] Supabase client is null!');
+      throw new Error('Supabase client not initialized');
+    }
+    
+    // Build the query explicitly to see what's happening
+    const query = supabase
       .from('cart_items')
       .select('*, product:products(*), variant:product_variants(*)')
-      .eq('user_id', customerId)
-      .order('created_at', { ascending: false });
+      .eq('user_id', customerId);
+    
+    console.log('[Cart Debug] Executing cart query with user_id:', customerId);
+    
+    const { data: cartItems, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
+      console.error('[Cart Debug] Supabase error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       throw new Error(`Failed to fetch cart: ${error.message}`);
     }
 

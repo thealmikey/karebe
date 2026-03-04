@@ -8,8 +8,8 @@ export interface Branch {
   phone: string;
   lat?: number;
   lng?: number;
-  isMain: boolean;
-  operatingHours?: {
+  is_main: boolean;
+  operating_hours?: {
     open: string;
     close: string;
   };

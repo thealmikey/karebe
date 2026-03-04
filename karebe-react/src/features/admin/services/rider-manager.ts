@@ -2,6 +2,18 @@ import { supabase } from '@/lib/supabase';
 
 export interface Rider {
   id: string;
+  user_id: string | null;
+  full_name: string;
+  phone: string;
+  whatsapp_number: string | null;
+  branch_id: string | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+// For backward compatibility
+export interface RiderLegacy {
+  id: string;
   user_id: string;
   full_name: string;
   phone: string;
@@ -21,18 +33,15 @@ export interface Rider {
 export interface RiderCreateInput {
   full_name: string;
   phone: string;
-  email?: string;
-  vehicle_type?: string;
-  license_plate?: string;
-  password: string;
+  whatsapp_number?: string;
+  branch_id?: string;
 }
 
 export interface RiderUpdateInput {
   full_name?: string;
   phone?: string;
-  email?: string;
-  vehicle_type?: string;
-  license_plate?: string;
+  whatsapp_number?: string;
+  branch_id?: string;
   is_active?: boolean;
 }
 
@@ -93,53 +102,23 @@ export class RiderManager {
   }
 
   static async createRider(input: RiderCreateInput): Promise<Rider> {
-    // First create the user account
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: input.email || `${input.phone}@rider.karebe.local`,
-      password: input.password,
-      options: {
-        data: {
-          full_name: input.full_name,
-          role: 'rider',
-        },
-      },
-    });
-
-    if (authError) {
-      throw new Error(`Failed to create rider account: ${authError.message}`);
-    }
-
-    if (!authData.user) {
-      throw new Error('Failed to create rider account: No user returned');
-    }
-
-    // Then create the rider profile
     const { data, error } = await supabase
       .from('riders')
       .insert({
-        user_id: authData.user.id,
+        id: crypto.randomUUID(),
+        user_id: null,
         full_name: input.full_name,
         phone: input.phone,
-        email: input.email || null,
-        vehicle_type: input.vehicle_type || null,
-        license_plate: input.license_plate || null,
+        whatsapp_number: input.whatsapp_number || input.phone,
+        branch_id: input.branch_id || null,
         is_active: true,
-        total_deliveries: 0,
-        rating: 0,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       })
       .select()
       .single();
 
     if (error) {
-      // Rollback: delete the auth user if rider creation fails
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      throw new Error(`Failed to create rider profile: ${error.message}`);
-    }
-
-    if (!data) {
-      throw new Error('Failed to create rider profile: No data returned');
+      throw new Error(`Failed to create rider: ${error.message}`);
     }
 
     return data;
@@ -148,10 +127,7 @@ export class RiderManager {
   static async updateRider(id: string, updates: RiderUpdateInput): Promise<Rider> {
     const { data, error } = await supabase
       .from('riders')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updates)
       .eq('id', id)
       .select()
       .single();
@@ -160,20 +136,10 @@ export class RiderManager {
       throw new Error(`Failed to update rider: ${error.message}`);
     }
 
-    if (!data) {
-      throw new Error('Failed to update rider: No data returned');
-    }
-
     return data;
   }
 
   static async deleteRider(id: string): Promise<void> {
-    const rider = await this.getRiderById(id);
-    if (!rider) {
-      throw new Error('Rider not found');
-    }
-
-    // Delete rider profile first
     const { error } = await supabase
       .from('riders')
       .delete()
@@ -182,9 +148,6 @@ export class RiderManager {
     if (error) {
       throw new Error(`Failed to delete rider: ${error.message}`);
     }
-
-    // Then delete the auth user
-    await supabase.auth.admin.deleteUser(rider.user_id);
   }
 
   static async toggleRiderStatus(id: string): Promise<Rider> {
@@ -196,84 +159,17 @@ export class RiderManager {
     return this.updateRider(id, { is_active: !rider.is_active });
   }
 
-  static async updateRiderLocation(
-    id: string,
-    latitude: number,
-    longitude: number
-  ): Promise<Rider> {
-    const { data, error } = await supabase
-      .from('riders')
-      .update({
-        current_latitude: latitude,
-        current_longitude: longitude,
-        last_location_update: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to update rider location: ${error.message}`);
-    }
-
-    if (!data) {
-      throw new Error('Failed to update rider location: No data returned');
-    }
-
-    return data;
-  }
-
-  static async getAvailableRiders(): Promise<Rider[]> {
+  static async getRidersByBranch(branchId: string): Promise<Rider[]> {
     const { data, error } = await supabase
       .from('riders')
       .select('*')
-      .eq('is_active', true)
-      .order('total_deliveries', { ascending: false });
+      .eq('branch_id', branchId)
+      .eq('is_active', true);
 
     if (error) {
-      throw new Error(`Failed to fetch available riders: ${error.message}`);
+      throw new Error(`Failed to fetch riders by branch: ${error.message}`);
     }
 
     return data || [];
-  }
-
-  static async getRiderStats(id: string): Promise<{
-    totalDeliveries: number;
-    rating: number;
-    averageDeliveryTime: number;
-    completionRate: number;
-  }> {
-    const { data: deliveries, error } = await supabase
-      .from('deliveries')
-      .select('status, created_at, completed_at')
-      .eq('rider_id', id);
-
-    if (error) {
-      throw new Error(`Failed to fetch rider stats: ${error.message}`);
-    }
-
-    const total = deliveries?.length || 0;
-    const completed = deliveries?.filter(d => d.status === 'completed').length || 0;
-    const completionRate = total > 0 ? (completed / total) * 100 : 0;
-
-    // Calculate average delivery time
-    const completedDeliveries = deliveries?.filter(d => d.status === 'completed' && d.completed_at) || [];
-    const avgTime = completedDeliveries.length > 0
-      ? completedDeliveries.reduce((sum, d) => {
-          const start = new Date(d.created_at).getTime();
-          const end = new Date(d.completed_at!).getTime();
-          return sum + (end - start);
-        }, 0) / completedDeliveries.length / 1000 / 60 // in minutes
-      : 0;
-
-    const rider = await this.getRiderById(id);
-
-    return {
-      totalDeliveries: total,
-      rating: rider?.rating || 0,
-      averageDeliveryTime: Math.round(avgTime),
-      completionRate: Math.round(completionRate),
-    };
   }
 }

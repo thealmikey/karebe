@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Package, Plus, Trash2, Edit, Search, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Package, Plus, Trash2, Edit, Search, AlertCircle, Upload, Camera, Link as LinkIcon, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,14 +11,137 @@ import { Select } from '@/components/ui/select';
 import { ProductManager, Product, ProductCreateInput } from '@/features/admin/services/product-manager';
 import { AuthGuard } from '@/features/auth/components/auth-guard';
 
+// Expanded categories for wines & spirits
 const CATEGORIES = [
-  { value: 'Beer', label: 'Beer' },
   { value: 'Wine', label: 'Wine' },
-  { value: 'Spirit', label: 'Spirit' },
+  { value: 'Whisky', label: 'Whisky' },
+  { value: 'Vodka', label: 'Vodka' },
+  { value: 'Gin', label: 'Gin' },
+  { value: 'Rum', label: 'Rum' },
+  { value: 'Brandy', label: 'Brandy' },
+  { value: 'Tequila', label: 'Tequila' },
+  { value: 'Beer', label: 'Beer' },
   { value: 'Cider', label: 'Cider' },
+  { value: 'Champagne', label: 'Champagne' },
   { value: 'Ready to Drink', label: 'Ready to Drink' },
   { value: 'Non-Alcoholic', label: 'Non-Alcoholic' },
+  { value: 'Soft Drink', label: 'Soft Drink' },
 ];
+
+// Size options based on category
+const SIZE_OPTIONS: Record<string, { value: string; label: string }[]> = {
+  Wine: [
+    { value: '375ml', label: '375ml' },
+    { value: '750ml', label: '750ml' },
+    { value: '1.5L', label: '1.5L' },
+  ],
+  Champagne: [
+    { value: '375ml', label: '375ml' },
+    { value: '750ml', label: '750ml' },
+    { value: '1.5L', label: '1.5L' },
+  ],
+  Beer: [
+    { value: '330ml', label: '330ml' },
+    { value: '500ml', label: '500ml' },
+  ],
+  Cider: [
+    { value: '330ml', label: '330ml' },
+    { value: '500ml', label: '500ml' },
+  ],
+  'Ready to Drink': [
+    { value: '250ml', label: '250ml' },
+    { value: '330ml', label: '330ml' },
+    { value: '350ml', label: '350ml' },
+  ],
+  Spirit: [
+    { value: '350ml', label: '350ml' },
+    { value: '700ml', label: '700ml' },
+    { value: '750ml', label: '750ml' },
+    { value: '1L', label: '1L' },
+  ],
+  Whisky: [
+    { value: '350ml', label: '350ml' },
+    { value: '700ml', label: '700ml' },
+    { value: '750ml', label: '750ml' },
+    { value: '1L', label: '1L' },
+  ],
+  Vodka: [
+    { value: '350ml', label: '350ml' },
+    { value: '700ml', label: '700ml' },
+    { value: '750ml', label: '750ml' },
+    { value: '1L', label: '1L' },
+  ],
+  Gin: [
+    { value: '350ml', label: '350ml' },
+    { value: '700ml', label: '700ml' },
+    { value: '750ml', label: '750ml' },
+    { value: '1L', label: '1L' },
+  ],
+  Rum: [
+    { value: '350ml', label: '350ml' },
+    { value: '700ml', label: '700ml' },
+    { value: '750ml', label: '750ml' },
+    { value: '1L', label: '1L' },
+  ],
+  Brandy: [
+    { value: '350ml', label: '350ml' },
+    { value: '700ml', label: '700ml' },
+    { value: '750ml', label: '750ml' },
+    { value: '1L', label: '1L' },
+  ],
+  Tequila: [
+    { value: '350ml', label: '350ml' },
+    { value: '700ml', label: '700ml' },
+    { value: '750ml', label: '750ml' },
+    { value: '1L', label: '1L' },
+  ],
+  'Non-Alcoholic': [
+    { value: '250ml', label: '250ml' },
+    { value: '330ml', label: '330ml' },
+    { value: '500ml', label: '500ml' },
+    { value: '1L', label: '1L' },
+  ],
+  'Soft Drink': [
+    { value: '250ml', label: '250ml' },
+    { value: '330ml', label: '330ml' },
+    { value: '500ml', label: '500ml' },
+    { value: '1L', label: '1L' },
+    { value: '1.75L', label: '1.75L' },
+  ],
+};
+
+// Get sizes for a category
+const getSizesForCategory = (category: string): { value: string; label: string }[] => {
+  // Check exact match first
+  if (SIZE_OPTIONS[category]) {
+    return SIZE_OPTIONS[category];
+  }
+  // For spirits category
+  if (category === 'Spirit') {
+    return SIZE_OPTIONS['Spirit'];
+  }
+  // Default to common sizes
+  return [
+    { value: '250ml', label: '250ml' },
+    { value: '330ml', label: '330ml' },
+    { value: '500ml', label: '500ml' },
+    { value: '700ml', label: '700ml' },
+    { value: '750ml', label: '750ml' },
+    { value: '1L', label: '1L' },
+  ];
+};
+
+// Handle image file selection
+const handleImageFile = (file: File, setProduct: React.Dispatch<React.SetStateAction<ProductCreateInput>>, setPreview: React.Dispatch<React.SetStateAction<string>>) => {
+  if (file && file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(reader.result as string);
+      setProduct((prev) => ({ ...prev, image_url: reader.result as string }));
+    };
+    reader.readAsDataURL(file);
+  }
+};
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -37,9 +160,12 @@ export default function AdminProductsPage() {
     stock_quantity: 0,
     image_url: '',
     unit_size: '',
-    brand: '',
     is_featured: false,
   });
+
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [imageMode, setImageMode] = useState<'url' | 'upload' | 'camera'>('url');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
 
   const loadProducts = async () => {
@@ -74,7 +200,6 @@ export default function AdminProductsPage() {
         stock_quantity: 0,
         image_url: '',
         unit_size: '',
-        brand: '',
         is_featured: false,
       });
       loadProducts();
@@ -94,7 +219,6 @@ export default function AdminProductsPage() {
         stock_quantity: editingProduct.stock_quantity,
         image_url: editingProduct.image_url || undefined,
         unit_size: editingProduct.unit_size || undefined,
-        brand: editingProduct.brand || undefined,
         is_featured: editingProduct.is_featured,
       });
       setIsEditDialogOpen(false);
@@ -207,7 +331,7 @@ export default function AdminProductsPage() {
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                        <p className="text-sm text-gray-500">{product.brand || product.category}</p>
+                        <p className="text-sm text-gray-500">{product.category}</p>
                       </div>
                       <span className="font-bold text-brand-600">KSh {product.price.toLocaleString()}</span>
                     </div>
@@ -283,27 +407,18 @@ export default function AdminProductsPage() {
                   <Select
                     options={CATEGORIES}
                     value={newProduct.category}
-                    onChange={(value) => setNewProduct({ ...newProduct, category: value })}
+                    onValueChange={(value) => setNewProduct({ ...newProduct, category: value })}
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="brand">Brand</Label>
-                  <Input
-                    id="brand"
-                    value={newProduct.brand}
-                    onChange={(e) => setNewProduct({ ...newProduct, brand: e.target.value })}
-                    placeholder="Brand name"
+                  <Label htmlFor="unit_size">Size</Label>
+                  <Select
+                    options={getSizesForCategory(newProduct.category)}
+                    value={newProduct.unit_size || ''}
+                    onValueChange={(value) => setNewProduct({ ...newProduct, unit_size: value })}
+                    placeholder="Select size"
                   />
                 </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="unit_size">Unit Size</Label>
-                <Input
-                  id="unit_size"
-                  value={newProduct.unit_size}
-                  onChange={(e) => setNewProduct({ ...newProduct, unit_size: e.target.value })}
-                  placeholder="e.g., 500ml, 1L"
-                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="image_url">Image URL</Label>
@@ -375,25 +490,18 @@ export default function AdminProductsPage() {
                     <Select
                       options={CATEGORIES}
                       value={editingProduct.category}
-                      onChange={(value) => setEditingProduct({ ...editingProduct, category: value })}
+                      onValueChange={(value) => setEditingProduct({ ...editingProduct, category: value })}
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="edit-brand">Brand</Label>
-                    <Input
-                      id="edit-brand"
-                      value={editingProduct.brand || ''}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, brand: e.target.value })}
+                    <Label htmlFor="edit-unit_size">Size</Label>
+                    <Select
+                      options={getSizesForCategory(editingProduct.category)}
+                      value={editingProduct.unit_size || ''}
+                      onValueChange={(value) => setEditingProduct({ ...editingProduct, unit_size: value })}
+                      placeholder="Select size"
                     />
                   </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-unit_size">Unit Size</Label>
-                  <Input
-                    id="edit-unit_size"
-                    value={editingProduct.unit_size || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, unit_size: e.target.value })}
-                  />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="edit-image_url">Image URL</Label>
