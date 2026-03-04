@@ -414,7 +414,7 @@ export class OrderService {
 
     if (error) {
       logger.error('Failed to get orders by status', { error, status, branchId });
-      throw error;
+      throw new Error(`Failed to get orders: ${error.message} (${error.code})`);
     }
 
     return data as Order[];
