@@ -4,6 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Debug: Log raw values
+console.log('[Supabase] Raw URL value:', JSON.stringify(supabaseUrl));
+console.log('[Supabase] Raw Key value:', supabaseAnonKey ? '[PRESENT]' : '[MISSING]');
+
 // Check if valid credentials exist
 const hasValidUrl = typeof supabaseUrl === 'string' && 
   supabaseUrl.length > 0 && 
@@ -15,10 +19,8 @@ const hasValidKey = typeof supabaseAnonKey === 'string' &&
   supabaseAnonKey.startsWith('eyJ');
 
 // Log for debugging
-if (typeof window !== 'undefined') {
-  console.log('[Supabase] Env check - URL:', hasValidUrl ? 'VALID' : 'MISSING/INVALID');
-  console.log('[Supabase] Env check - Key:', hasValidKey ? 'VALID' : 'MISSING/INVALID');
-}
+console.log('[Supabase] URL check - length:', supabaseUrl?.length, '| startsWith https:', supabaseUrl?.startsWith('https://'), '| includes supabase.co:', supabaseUrl?.includes('.supabase.co'));
+console.log('[Supabase] Final - URL Valid:', hasValidUrl, '| Key Valid:', hasValidKey);
 
 // Create client only with valid credentials
 let supabase: ReturnType<typeof createClient> | null = null;
@@ -32,16 +34,12 @@ if (hasValidUrl && hasValidKey) {
         detectSessionInUrl: true,
       },
     });
-    if (typeof window !== 'undefined') {
-      console.log('[Supabase] Client initialized - using live data');
-    }
+    console.log('[Supabase] Client initialized - using live data');
   } catch (e) {
     console.error('[Supabase] Failed to create client:', e);
   }
 } else {
-  if (typeof window !== 'undefined') {
-    console.warn('[Supabase] Invalid credentials - using demo data');
-  }
+  console.warn('[Supabase] Invalid credentials - using demo data');
 }
 
 export { supabase };
