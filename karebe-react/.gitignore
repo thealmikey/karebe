@@ -8,10 +8,8 @@ dist
 dist-ssr
 *.local
 
-# Environment
-.env
-.env.local
-.env.*.local
+# Environment variables — configure in Vercel for production
+# .env is tracked for deployment
 
 # IDE
 .vscode/*
