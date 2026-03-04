@@ -1,119 +1,83 @@
 -- =============================================================================
--- Karebe Complete Schema Migration (Safe version)
--- Run this in Supabase SQL Editor - handles existing tables safely
+-- Karebe Complete Schema Migration (Fully Safe)
+-- Run this in Supabase SQL Editor
 -- =============================================================================
 
--- Enable UUID extension
-DO $$ BEGIN CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; END $$;
-
--- =============================================================================
--- Helper function to check if column exists
--- =============================================================================
 DO $$ 
 BEGIN
+    -- Enable UUID extension
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
     -- =============================================================================
-    -- Fix branches table - add missing columns if they don't exist
+    -- Fix branches table - add missing columns
     -- =============================================================================
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'branches' AND column_name = 'address') THEN
         ALTER TABLE branches ADD COLUMN address TEXT;
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'branches' AND column_name = 'is_main') THEN
         ALTER TABLE branches ADD COLUMN is_main BOOLEAN DEFAULT FALSE;
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'branches' AND column_name = 'is_active') THEN
         ALTER TABLE branches ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'branches' AND column_name = 'mpesa_shortcode') THEN
         ALTER TABLE branches ADD COLUMN mpesa_shortcode TEXT;
     END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'branches' AND column_name = 'mpesa_passkey') THEN
-        ALTER TABLE branches ADD COLUMN mpesa_passkey TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'branches' AND column_name = 'mpesa_env_key') THEN
-        ALTER TABLE branches ADD COLUMN mpesa_env_key TEXT;
-    END IF;
 
-    -- Insert default branch if not exists
-    INSERT INTO branches (id, name, address, phone, is_main) 
-    VALUES ('main-branch', 'Main Branch', '123 Main St, Nairobi', '+254712345678', true)
-    ON CONFLICT (id) DO NOTHING;
-    
+    -- Insert default branch (only if id column exists and is text)
+    BEGIN
+        INSERT INTO branches (id, name, address, phone, is_main) 
+        VALUES ('main-branch', 'Main Branch', '123 Main St, Nairobi', '+254712345678', true)
+        ON CONFLICT (id) DO NOTHING;
+    EXCEPTION WHEN duplicate_column THEN NULL; END;
+
     -- =============================================================================
     -- Fix riders table - add missing columns
     -- =============================================================================
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'riders' AND column_name = 'whatsapp_number') THEN
         ALTER TABLE riders ADD COLUMN whatsapp_number TEXT;
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'riders' AND column_name = 'branch_id') THEN
         ALTER TABLE riders ADD COLUMN branch_id TEXT;
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'riders' AND column_name = 'status') THEN
         ALTER TABLE riders ADD COLUMN status VARCHAR(20) DEFAULT 'AVAILABLE';
     END IF;
 
-    -- Insert demo rider if not exists
-    INSERT INTO riders (id, full_name, phone, whatsapp_number, branch_id, is_active)
-    VALUES (
-        '550e8400-e29b-41d4-a716-446655440000',
-        'John Rider',
-        '+254700000001',
-        '+254700000001',
-        'main-branch',
-        true
-    )
-    ON CONFLICT (id) DO NOTHING;
-    
     -- =============================================================================
     -- Fix orders table - add missing columns
     -- =============================================================================
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'confirmation_method') THEN
         ALTER TABLE orders ADD COLUMN confirmation_method VARCHAR(20);
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'confirmation_by') THEN
         ALTER TABLE orders ADD COLUMN confirmation_by UUID;
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'confirmation_at') THEN
         ALTER TABLE orders ADD COLUMN confirmation_at TIMESTAMPTZ;
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'last_actor_type') THEN
         ALTER TABLE orders ADD COLUMN last_actor_type VARCHAR(20);
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'last_actor_id') THEN
         ALTER TABLE orders ADD COLUMN last_actor_id UUID;
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'state_version') THEN
         ALTER TABLE orders ADD COLUMN state_version INTEGER DEFAULT 1;
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'idempotency_key') THEN
         ALTER TABLE orders ADD COLUMN idempotency_key VARCHAR(64);
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'orders' AND column_name = 'metadata') THEN
         ALTER TABLE orders ADD COLUMN metadata JSONB DEFAULT '{}'::jsonb;
     END IF;
 
     -- Create indexes
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_idempotency_key 
-    ON orders(idempotency_key) 
-    WHERE idempotency_key IS NOT NULL;
-    
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_idempotency_key ON orders(idempotency_key) WHERE idempotency_key IS NOT NULL;
     CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 
     -- =============================================================================
-    -- Create order_items table if not exists
+    -- Create order_items table
     -- =============================================================================
     CREATE TABLE IF NOT EXISTS order_items (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -145,36 +109,28 @@ BEGIN
         request_id VARCHAR(64),
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
-    
-    CREATE INDEX IF NOT EXISTS idx_order_state_transitions_order_id 
-    ON order_state_transitions(order_id);
+    CREATE INDEX IF NOT EXISTS idx_order_state_transitions_order_id ON order_state_transitions(order_id);
 
     -- =============================================================================
-    -- Create categories table if not exists
+    -- Fix categories table - add missing columns
     -- =============================================================================
-    CREATE TABLE IF NOT EXISTS categories (
-        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        name TEXT NOT NULL,
-        slug TEXT UNIQUE,
-        description TEXT,
-        image_url TEXT,
-        sort_order INTEGER DEFAULT 0,
-        is_active BOOLEAN DEFAULT TRUE,
-        created_at TIMESTAMPTZ DEFAULT NOW()
-    );
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'categories' AND column_name = 'slug') THEN
+        ALTER TABLE categories ADD COLUMN slug TEXT UNIQUE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'categories' AND column_name = 'image_url') THEN
+        ALTER TABLE categories ADD COLUMN image_url TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'categories' AND column_name = 'sort_order') THEN
+        ALTER TABLE categories ADD COLUMN sort_order INTEGER DEFAULT 0;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'categories' AND column_name = 'is_active') THEN
+        ALTER TABLE categories ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
+    END IF;
 
-    -- Insert default categories
-    INSERT INTO categories (id, name, slug, sort_order, is_active) VALUES
-        (gen_random_uuid(), 'Wine', 'wine', 1, true),
-        (gen_random_uuid(), 'Whisky', 'whisky', 2, true),
-        (gen_random_uuid(), 'Vodka', 'vodka', 3, true),
-        (gen_random_uuid(), 'Beer', 'beer', 4, true),
-        (gen_random_uuid(), 'Soft Drink', 'soft-drink', 5, true),
-        (gen_random_uuid(), 'Gin', 'gin', 6, true),
-        (gen_random_uuid(), 'Rum', 'rum', 7, true),
-        (gen_random_uuid(), 'Brandy', 'brandy', 8, true),
-        (gen_random_uuid(), 'Tequila', 'tequila', 9, true)
-    ON CONFLICT (slug) DO NOTHING;
+    -- Insert categories only with columns that exist
+    INSERT INTO categories (name) VALUES 
+        ('Wine'), ('Whisky'), ('Vodka'), ('Beer'), ('Soft Drink'), ('Gin'), ('Rum'), ('Brandy'), ('Tequila')
+    ON CONFLICT DO NOTHING;
 
     -- =============================================================================
     -- Fix products table - add missing columns
@@ -182,26 +138,22 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'products' AND column_name = 'category_id') THEN
         ALTER TABLE products ADD COLUMN category_id UUID;
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'products' AND column_name = 'image') THEN
         ALTER TABLE products ADD COLUMN image TEXT;
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'products' AND column_name = 'is_featured') THEN
         ALTER TABLE products ADD COLUMN is_featured BOOLEAN DEFAULT FALSE;
     END IF;
-    
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'products' AND column_name = 'is_visible') THEN
         ALTER TABLE products ADD COLUMN is_visible BOOLEAN DEFAULT TRUE;
     END IF;
 
-    -- Create indexes
     CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
     CREATE INDEX IF NOT EXISTS idx_products_is_visible ON products(is_visible);
     CREATE INDEX IF NOT EXISTS idx_products_is_available ON products(is_available);
 
     -- =============================================================================
-    -- Create product_variants table if not exists
+    -- Create product_variants table
     -- =============================================================================
     CREATE TABLE IF NOT EXISTS product_variants (
         id TEXT PRIMARY KEY,
@@ -214,11 +166,10 @@ BEGIN
         is_available BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
-    
     CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id);
 
     -- =============================================================================
-    -- Create order_locks table if not exists
+    -- Create order_locks table
     -- =============================================================================
     CREATE TABLE IF NOT EXISTS order_locks (
         order_id UUID PRIMARY KEY REFERENCES orders(id) ON DELETE CASCADE,
@@ -229,7 +180,7 @@ BEGIN
     );
 
     -- =============================================================================
-    -- Create admin_settings table if not exists
+    -- Create admin_settings table
     -- =============================================================================
     CREATE TABLE IF NOT EXISTS admin_settings (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -242,7 +193,6 @@ BEGIN
         updated_at TIMESTAMPTZ DEFAULT NOW()
     );
 
-    -- Insert default settings
     INSERT INTO admin_settings (setting_key, setting_value, description) VALUES
         ('default_branch_id', 'main-branch', 'Default branch for orders'),
         ('whatsapp_business_number', '+254712345678', 'WhatsApp business phone number'),
@@ -251,7 +201,4 @@ BEGIN
 
 END $$;
 
--- =============================================================================
--- Success message
--- =============================================================================
-SELECT 'Migration completed successfully!' as status;
+SELECT 'Migration completed!' as status;
