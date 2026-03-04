@@ -24,12 +24,10 @@ BEGIN
         ALTER TABLE branches ADD COLUMN mpesa_shortcode TEXT;
     END IF;
 
-    -- Insert default branch (only if id column exists and is text)
-    BEGIN
-        INSERT INTO branches (id, name, address, phone, is_main) 
-        VALUES ('main-branch', 'Main Branch', '123 Main St, Nairobi', '+254712345678', true)
-        ON CONFLICT (id) DO NOTHING;
-    EXCEPTION WHEN duplicate_column THEN NULL; END;
+    -- Insert default branch
+    INSERT INTO branches (id, name, address, phone, is_main) 
+    VALUES ('main-branch', 'Main Branch', '123 Main St, Nairobi', '+254712345678', true)
+    ON CONFLICT (id) DO NOTHING;
 
     -- =============================================================================
     -- Fix riders table - add missing columns
@@ -127,9 +125,17 @@ BEGIN
         ALTER TABLE categories ADD COLUMN is_active BOOLEAN DEFAULT TRUE;
     END IF;
 
-    -- Insert categories only with columns that exist
-    INSERT INTO categories (name) VALUES 
-        ('Wine'), ('Whisky'), ('Vodka'), ('Beer'), ('Soft Drink'), ('Gin'), ('Rum'), ('Brandy'), ('Tequila')
+    -- Insert categories with explicit UUIDs
+    INSERT INTO categories (id, name) VALUES 
+        (gen_random_uuid(), 'Wine'),
+        (gen_random_uuid(), 'Whisky'),
+        (gen_random_uuid(), 'Vodka'),
+        (gen_random_uuid(), 'Beer'),
+        (gen_random_uuid(), 'Soft Drink'),
+        (gen_random_uuid(), 'Gin'),
+        (gen_random_uuid(), 'Rum'),
+        (gen_random_uuid(), 'Brandy'),
+        (gen_random_uuid(), 'Tequila')
     ON CONFLICT DO NOTHING;
 
     -- =============================================================================
