@@ -120,3 +120,6 @@ export {
   type TableContainerProps,
   type TableEmptyProps,
 } from './table';
+
+// Textarea
+export { Textarea, type TextareaProps } from './textarea';

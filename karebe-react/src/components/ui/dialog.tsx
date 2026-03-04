@@ -9,7 +9,7 @@ export interface DialogProps {
   /** Whether the dialog is open */
   open: boolean;
   /** Callback when the dialog should close */
-  onClose: () => void;
+  onClose?: () => void;
   /** Callback when open state changes */
   onOpenChange?: (open: boolean) => void;
   /** Dialog title */
@@ -64,7 +64,7 @@ export function Dialog({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onClose?.();
       }
     };
 
@@ -132,7 +132,7 @@ export function Dialog({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity animate-fade-in"
-        onClick={closeOnOverlayClick ? onClose : undefined}
+        onClick={closeOnOverlayClick ? () => onClose?.() : undefined}
         aria-hidden="true"
       />
 
