@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Container } from '@/components/layout/container';
 import { FloatingActions } from '@/components/layout/floating-actions';
@@ -68,6 +68,14 @@ export function CatalogPage() {
                   {cartItems.length}
                 </span>
               )}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/admin/login')}
+              className="flex items-center gap-2"
+            >
+              <LogIn className="w-4 h-4" />
+              Login
             </Button>
           </div>
 

@@ -8,9 +8,8 @@ import './index.css';
 // Import and initialize demo data
 import { initializeDemoData } from '@/lib/seed';
 
-// Import SEO and Contact components
+// Import SEO components
 import { ErrorBoundary, AgeVerificationProvider } from '@/components/seo';
-import { WhatsAppQuickOrderFab } from '@/components/contact';
 
 // Initialize demo data on app startup
 const seedResult = initializeDemoData();
@@ -38,8 +37,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <ErrorBoundary>
           <AgeVerificationProvider>
             <App />
-            {/* WhatsApp Quick Order FAB - available on all pages */}
-            <WhatsAppQuickOrderFab />
           </AgeVerificationProvider>
         </ErrorBoundary>
       </BrowserRouter>

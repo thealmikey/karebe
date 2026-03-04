@@ -24,7 +24,7 @@ function LoginContent() {
   const handleQuickLogin = async (role: 'admin' | 'rider' | 'super-admin') => {
     const credentials = {
       admin: { username: 'admin@karebe.com', password: 'admin123' },
-      'super-admin': { username: 'super@karebe.com', password: 'super123' },
+      'super-admin': { username: 'owner@karebe.com', password: 'owner123' },
       rider: { username: 'rider@karebe.com', password: 'rider123' },
     };
     
@@ -56,43 +56,44 @@ function LoginContent() {
           description="Enter your credentials to continue"
         />
 
-        {/* Dev Mode Quick Login */}
-        {isDevMode && (
-          <Card className="mt-6 p-4 border-2 border-dashed border-brand-300 bg-brand-50/50">
-            <p className="text-xs font-semibold text-brand-600 uppercase tracking-wider mb-3 text-center">
-              Dev Mode - Quick Login
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickLogin('super-admin')}
-                className="flex flex-col items-center gap-1 h-auto py-2"
-              >
-                <Shield className="h-4 w-4" />
-                <span className="text-xs">Super Admin</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickLogin('admin')}
-                className="flex flex-col items-center gap-1 h-auto py-2"
-              >
-                <UserCog className="h-4 w-4" />
-                <span className="text-xs">Admin</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickLogin('rider')}
-                className="flex flex-col items-center gap-1 h-auto py-2"
-              >
-                <Bike className="h-4 w-4" />
-                <span className="text-xs">Rider</span>
-              </Button>
-            </div>
-          </Card>
-        )}
+        {/* Quick Login - Available in all modes */}
+        <Card className="mt-6 p-4 border-2 border-dashed border-brand-300 bg-brand-50/50">
+          <p className="text-xs font-semibold text-brand-600 uppercase tracking-wider mb-3 text-center">
+            Quick Login (Demo)
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleQuickLogin('super-admin')}
+              className="flex flex-col items-center gap-1 h-auto py-2"
+            >
+              <Shield className="h-4 w-4" />
+              <span className="text-xs">Super Admin</span>
+              <span className="text-[10px] text-gray-500">owner@karebe.com</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleQuickLogin('admin')}
+              className="flex flex-col items-center gap-1 h-auto py-2"
+            >
+              <UserCog className="h-4 w-4" />
+              <span className="text-xs">Admin</span>
+              <span className="text-[10px] text-gray-500">admin@karebe.com</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleQuickLogin('rider')}
+              className="flex flex-col items-center gap-1 h-auto py-2"
+            >
+              <Bike className="h-4 w-4" />
+              <span className="text-xs">Rider</span>
+              <span className="text-[10px] text-gray-500">rider@karebe.com</span>
+            </Button>
+          </div>
+        </Card>
 
         <p className="text-center text-sm text-brand-500 mt-6">
           Protected area. Authorized personnel only.

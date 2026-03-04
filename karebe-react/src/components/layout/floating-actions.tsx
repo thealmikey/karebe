@@ -151,7 +151,7 @@ export function FloatingActions({
               title="Share cart via WhatsApp or SMS"
             >
               <Send className="h-5 w-5" />
-              <span className="font-medium">Share Order</span>
+              <span className="font-medium">Text Order</span>
             </Button>
             
             {/* View Cart Button */}
@@ -176,15 +176,6 @@ export function FloatingActions({
             </Button>
           </Link>
         )}
-
-        {/* WhatsApp Button */}
-        <Button
-          onClick={handleWhatsAppInquiry}
-          size="icon"
-          className="h-14 w-14 rounded-full shadow-lg bg-green-500 hover:bg-green-600"
-        >
-          <MessageCircle className="h-6 w-6" />
-        </Button>
 
         {/* Call to Order Button */}
         <div className="h-auto">
