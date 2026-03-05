@@ -56,9 +56,12 @@ export function getPlaceholderImage(
 /**
  * Get best available image URL for a product
  * Priority:
- * 1. First valid product image
- * 2. Category-based placeholder
- * 3. Generic placeholder
+ * 1. First valid product image from Supabase/storage
+ * 2. Check if Supabase is configured but no images added
+ * 3. Category-based placeholder
+ * 4. Generic placeholder
+ * 
+ * Debug output explains WHY the fallback was used
  */
 export function getProductImage(
   images: string[] | undefined,
@@ -76,6 +79,7 @@ export function getProductImage(
     productName,
     category,
     supabaseConfigured: !!supabase,
+    timestamp: new Date().toISOString(),
   };
 
   // Priority 1: Use first valid image from array
@@ -83,6 +87,7 @@ export function getProductImage(
     const imageUrl = images[0];
     debugInfo.source = 'image';
     debugInfo.imageUrl = imageUrl;
+    debugInfo.reason = 'Product has image in images array';
     
     if (debug) {
       debugLog('Using product image', debugInfo);
@@ -91,10 +96,50 @@ export function getProductImage(
     return { url: imageUrl, source: 'image', debug: debugInfo };
   }
 
-  // Priority 2: Category-based placeholder
+  // Priority 2a: Check if images array is empty but Supabase IS configured
+  // This means user likely forgot to add images for this product
+  if (supabase && (!images || images.length === 0)) {
+    debugInfo.source = 'category-placeholder';
+    debugInfo.reason = 'Supabase is configured but NO images added for this product';
+    debugInfo.solution = 'Add images via Edit Product form in admin panel';
+    debugInfo.supabaseStatus = 'connected';
+    debugInfo.imagesArrayStatus = 'empty or undefined';
+    
+    const placeholderUrl = getPlaceholderImage(productName, category, width, height);
+    debugInfo.placeholderUrl = placeholderUrl;
+    debugInfo.placeholderSource = 'picsum.photos';
+    
+    if (debug) {
+      debugLog('Image not showing: Supabase configured but no images added', debugInfo, true);
+    }
+    
+    return { url: placeholderUrl, source: 'category-placeholder', debug: debugInfo };
+  }
+
+  // Priority 2b: Supabase not configured at all
+  if (!supabase) {
+    debugInfo.source = 'category-placeholder';
+    debugInfo.reason = 'Supabase is NOT configured - running in demo/offline mode';
+    debugInfo.solution = 'Configure Supabase credentials in .env file';
+    debugInfo.supabaseStatus = 'not configured';
+    debugInfo.imagesArrayStatus = images ? (images.length === 0 ? 'empty array' : 'has items but none valid') : 'undefined';
+    
+    const placeholderUrl = getPlaceholderImage(productName, category, width, height);
+    debugInfo.placeholderUrl = placeholderUrl;
+    debugInfo.placeholderSource = 'picsum.photos (fallback)';
+    
+    if (debug) {
+      debugLog('Image not showing: Supabase not configured', debugInfo, true);
+    }
+    
+    return { url: placeholderUrl, source: 'category-placeholder', debug: debugInfo };
+  }
+
+  // Priority 3: Category-based placeholder (fallback for any other case)
   if (category) {
     const placeholderUrl = getPlaceholderImage(productName, category, width, height);
     debugInfo.source = 'category-placeholder';
+    debugInfo.reason = 'Using category-based placeholder as fallback';
     debugInfo.placeholderUrl = placeholderUrl;
     
     if (debug) {
@@ -104,9 +149,10 @@ export function getProductImage(
     return { url: placeholderUrl, source: 'category-placeholder', debug: debugInfo };
   }
 
-  // Priority 3: Generic placeholder
+  // Priority 4: Generic placeholder
   const defaultPlaceholder = getPlaceholderImage('product', undefined, width, height);
   debugInfo.source = 'default-placeholder';
+  debugInfo.reason = 'Using generic placeholder - no category available';
   debugInfo.placeholderUrl = defaultPlaceholder;
   
   if (debug) {

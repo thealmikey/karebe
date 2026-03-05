@@ -123,9 +123,17 @@ export function ProductCard({
       >
         {/* Debug: Log image info in development */}
         {process.env.NODE_ENV === 'development' && (
-          <div className="absolute top-0 left-0 z-50 opacity-0 hover:opacity-100 bg-black/80 text-white text-xs p-1">
+          <div className="absolute top-0 left-0 z-50 opacity-0 hover:opacity-100 bg-black/80 text-white text-xs p-2 max-w-[200px]">
+            <div className="font-bold mb-1">Image Debug Info:</div>
             <div>Source: {debugInfo.source as string || 'unknown'}</div>
-            <div>URL: {(debugInfo.imageUrl as string || debugInfo.placeholderUrl as string)?.substring(0, 30) || 'placeholder'}...</div>
+            <div>Reason: {debugInfo.reason as string || 'N/A'}</div>
+            <div>Supabase: {debugInfo.supabaseStatus as string || (debugInfo.supabaseConfigured ? 'connected' : 'not configured')}</div>
+            {debugInfo.solution && (
+              <div className="text-yellow-300 mt-1">Fix: {debugInfo.solution as string}</div>
+            )}
+            <div className="text-gray-400 mt-1 truncate">
+              URL: {(debugInfo.imageUrl as string || debugInfo.placeholderUrl as string)?.substring(0, 40) || 'placeholder'}...
+            </div>
           </div>
         )}
 
