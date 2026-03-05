@@ -294,7 +294,7 @@ function OrdersPageContent() {
                             KES {order.total_amount.toLocaleString()}
                           </p>
                           <p className="text-sm text-brand-500">
-                            {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                            {order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}
                           </p>
                         </div>
                         {getActionButtons(order)}
@@ -315,7 +315,7 @@ function OrdersPageContent() {
                           <div>
                             <h4 className="font-medium text-brand-900 mb-2">Order Items</h4>
                             <ul className="space-y-2">
-                              {order.items.map((item, idx) => (
+                              {order.items?.map((item, idx) => (
                                 <li key={idx} className="flex justify-between text-sm">
                                   <span className="text-brand-700">
                                     {item.quantity}x {item.product_name}

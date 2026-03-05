@@ -85,15 +85,26 @@ export function getProductImage(
   // Priority 1: Use first valid image from array
   if (images && images.length > 0 && images[0]) {
     const imageUrl = images[0];
-    debugInfo.source = 'image';
-    debugInfo.imageUrl = imageUrl;
-    debugInfo.reason = 'Product has image in images array';
     
-    if (debug) {
-      debugLog('Using product image', debugInfo);
+    // Validate the image URL - only use if it's a valid http/https URL
+    const isValidUrl = imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
+    
+    if (!isValidUrl) {
+      debugInfo.skippingImage = true;
+      debugInfo.skipReason = 'Invalid image URL - not a valid http/https URL';
+      debugInfo.invalidUrl = imageUrl;
+      // Continue to fallback logic instead of using invalid URL
+    } else {
+      debugInfo.source = 'image';
+      debugInfo.imageUrl = imageUrl;
+      debugInfo.reason = 'Product has valid image in images array';
+      
+      if (debug) {
+        debugLog('Using product image', debugInfo);
+      }
+      
+      return { url: imageUrl, source: 'image', debug: debugInfo };
     }
-    
-    return { url: imageUrl, source: 'image', debug: debugInfo };
   }
 
   // Priority 2a: Check if images array is empty but Supabase IS configured
