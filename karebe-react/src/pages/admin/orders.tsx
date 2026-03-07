@@ -29,6 +29,15 @@ import {
   OrderStatus 
 } from '@/features/orders/api/admin-orders';
 import { Dialog } from '@/components/ui/dialog';
+import { supabase } from '@/lib/supabase';
+
+interface Rider {
+  id: string;
+  name: string;
+  phone: string;
+  status: string;
+  is_active: boolean;
+}
 
 const statusConfig: Record<OrderStatus, { label: string; color: string; icon: typeof Package }> = {
   CART_DRAFT: { label: 'Draft', color: 'bg-gray-100 text-gray-700', icon: ShoppingCart },
@@ -51,6 +60,10 @@ function OrdersPageContent() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [riders, setRiders] = useState<Rider[]>([]);
+  const [ridersLoading, setRidersLoading] = useState(false);
+  const [showRiderDialog, setShowRiderDialog] = useState(false);
+  const [selectedRiderId, setSelectedRiderId] = useState<string>('');
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -63,6 +76,30 @@ function OrdersPageContent() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRiders = async () => {
+    setRidersLoading(true);
+    try {
+      if (!supabase) throw new Error('Supabase not configured');
+      const { data, error } = await supabase
+        .from('riders')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      setRiders(data || []);
+    } catch (err) {
+      console.error('Failed to load riders:', err);
+      // Fallback to demo riders
+      setRiders([
+        { id: 'rider-001', name: 'John Doe', phone: '+254712345678', status: 'AVAILABLE', is_active: true },
+        { id: 'rider-002', name: 'Jane Smith', phone: '+254723456789', status: 'BUSY', is_active: true },
+      ]);
+    } finally {
+      setRidersLoading(false);
     }
   };
 
@@ -118,12 +155,24 @@ function getActorId(userId?: string): string {
     }
   };
 
-  const handleAssignRider = async (order: Order) => {
-    // For demo, assign a mock rider
-    setActionLoading(order.id);
+  const handleAssignRiderClick = async (order: Order) => {
+    setSelectedOrder(order);
+    await fetchRiders();
+    setShowRiderDialog(true);
+  };
+
+  const handleConfirmAssignRider = async () => {
+    if (!selectedOrder || !selectedRiderId) {
+      alert('Please select a rider');
+      return;
+    }
+    
+    setShowRiderDialog(false);
+    setActionLoading(selectedOrder.id);
+    
     try {
-      await assignRider(order.id, {
-        rider_id: 'rider-001',
+      await assignRider(selectedOrder.id, {
+        rider_id: selectedRiderId,
         admin_id: user?.id || 'admin-001',
         notes: 'Assigned via admin dashboard',
       });
@@ -131,11 +180,11 @@ function getActorId(userId?: string): string {
     } catch (err) {
       // Fallback: just update status
       try {
-        await updateOrderStatus(order.id, {
+        await updateOrderStatus(selectedOrder.id, {
           status: 'RIDER_CONFIRMED_DIGITAL',
           actor_type: 'admin',
           actor_id: getActorId(user?.id),
-          expected_version: order.version,
+          expected_version: selectedOrder.version,
         });
         await fetchOrders();
       } catch (err2) {
@@ -143,6 +192,8 @@ function getActorId(userId?: string): string {
       }
     } finally {
       setActionLoading(null);
+      setSelectedOrder(null);
+      setSelectedRiderId('');
     }
   };
 
@@ -196,7 +247,7 @@ function getActorId(userId?: string): string {
         return (
           <Button
             size="sm"
-            onClick={() => handleAssignRider(order)}
+            onClick={() => handleAssignRiderClick(order)}
             disabled={isLoading}
             className="bg-purple-600 hover:bg-purple-700"
           >
@@ -373,6 +424,65 @@ function getActorId(userId?: string): string {
           )}
         </div>
       </Container>
+
+      {/* Rider Selection Dialog */}
+      <Dialog open={showRiderDialog} onOpenChange={setShowRiderDialog}>
+        <div className="p-6 bg-white rounded-lg max-w-md w-full">
+          <h2 className="text-xl font-bold mb-4">Assign Rider</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Select a rider for order: {selectedOrder?.order_number}
+          </p>
+          
+          {ridersLoading ? (
+            <div className="flex justify-center py-4">
+              <RefreshCw className="w-6 h-6 animate-spin text-brand-600" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select Rider
+                </label>
+                <select
+                  value={selectedRiderId}
+                  onChange={(e) => setSelectedRiderId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                >
+                  <option value="">-- Select a rider --</option>
+                  {riders.map((rider) => (
+                    <option key={rider.id} value={rider.id}>
+                      {rider.name} - {rider.phone}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowRiderDialog(false);
+                    setSelectedOrder(null);
+                    setSelectedRiderId('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmAssignRider}
+                  disabled={!selectedRiderId || actionLoading === selectedOrder?.id}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  {actionLoading === selectedOrder?.id ? (
+                    <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                  ) : null}
+                  Assign Rider
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Dialog>
     </div>
   );
 }
