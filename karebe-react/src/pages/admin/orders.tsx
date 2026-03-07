@@ -79,7 +79,7 @@ function OrdersPageContent() {
       await updateOrderStatus(order.id, {
         status: 'CONFIRMED_BY_MANAGER',
         actor_type: 'admin',
-        actor_id: user?.id || '00000000-0000-0000-0000-000000000001',
+        actor_id: '00000000-0000-0000-0000-000000000001',
         expected_version: order.version,
       });
       await fetchOrders();
@@ -96,7 +96,7 @@ function OrdersPageContent() {
       await updateOrderStatus(order.id, {
         status: 'DELIVERY_REQUEST_STARTED',
         actor_type: 'admin',
-        actor_id: user?.id || '00000000-0000-0000-0000-000000000001',
+        actor_id: '00000000-0000-0000-0000-000000000001',
         expected_version: order.version,
       });
       await fetchOrders();
@@ -123,7 +123,7 @@ function OrdersPageContent() {
         await updateOrderStatus(order.id, {
           status: 'RIDER_CONFIRMED_DIGITAL',
           actor_type: 'admin',
-          actor_id: user?.id || '00000000-0000-0000-0000-000000000001',
+          actor_id: '00000000-0000-0000-0000-000000000001',
           expected_version: order.version,
         });
         await fetchOrders();
