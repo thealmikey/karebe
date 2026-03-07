@@ -104,7 +104,7 @@ export async function getOrderById(orderId: string): Promise<Order | null> {
 
 export interface UpdateStatusRequest {
   status: OrderStatus;
-  actor_type: 'MANAGER' | 'RIDER' | 'SYSTEM';
+  actor_type: 'admin' | 'rider' | 'system' | 'customer' | 'webhook';
   actor_id: string;
   confirmation_method?: 'DIGITAL_SIGNATURE' | 'MANUAL_ACKNOWLEDGMENT';
   expected_version?: number;
