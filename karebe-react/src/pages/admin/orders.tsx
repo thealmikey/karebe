@@ -87,16 +87,16 @@ function OrdersPageContent() {
       if (!supabase) throw new Error('Supabase not configured');
       const { data, error } = await supabase
         .from('riders')
-        .select('id, name, phone, is_active')
+        .select('id, full_name, phone, is_active')
         .eq('is_active', true)
-        .order('name');
+        .order('full_name');
       
       if (error) throw error;
       
       // Map the data to our Rider interface
       const mappedRiders: Rider[] = (data || []).map((r: any) => ({
         id: r.id,
-        name: r.name,
+        name: r.full_name,
         phone: r.phone || '',
         status: 'AVAILABLE',
         is_active: r.is_active
