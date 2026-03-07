@@ -26,8 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_admin_users_role ON admin_users(role);
 INSERT INTO admin_users (id, email, password_hash, name, phone, role, branch_id)
 VALUES 
     ('00000000-0000-0000-0000-000000000001', 'owner@karebe.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'John Karebe', '+254712345678', 'super-admin', NULL),
-    ('00000000-0000-0000-0000-000000000002', 'admin@karebe.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Grace Muthoni', '+254723456789', 'admin', 'branch-wangige')
-ON CONFLICT (phone) DO NOTHING;
+    ('00000000-0000-0000-0000-000000000002', 'admin@karebe.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'Grace Muthoni', '+254723456789', 'admin', 'branch-wangige');
 
 -- Enable RLS
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
