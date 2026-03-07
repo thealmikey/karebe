@@ -13,7 +13,9 @@ import {
   MapPin,
   ChevronDown,
   ChevronUp,
-  AlertCircle
+  AlertCircle,
+  MessageCircle,
+  Send
 } from 'lucide-react';
 import { Container } from '@/components/layout/container';
 import { Button } from '@/components/ui/button';
@@ -85,16 +87,16 @@ function OrdersPageContent() {
       if (!supabase) throw new Error('Supabase not configured');
       const { data, error } = await supabase
         .from('riders')
-        .select('id, full_name, phone, is_active')
+        .select('id, name, phone, is_active')
         .eq('is_active', true)
-        .order('full_name');
+        .order('name');
       
       if (error) throw error;
       
       // Map the data to our Rider interface
       const mappedRiders: Rider[] = (data || []).map((r: any) => ({
         id: r.id,
-        name: r.full_name,
+        name: r.name,
         phone: r.phone || '',
         status: 'AVAILABLE',
         is_active: r.is_active
@@ -114,6 +116,7 @@ function OrdersPageContent() {
 
   useEffect(() => {
     fetchOrders();
+    fetchRiders();
     // Poll for new orders every 30 seconds
     const interval = setInterval(fetchOrders, 30000);
     return () => clearInterval(interval);
@@ -128,6 +131,34 @@ function getActorId(userId?: string): string {
   }
   // Otherwise use default UUID for demo/production
   return '00000000-0000-0000-0000-000000000001';
+}
+
+// Get rider by ID from riders list
+function getRiderById(riderId: string, ridersList: Rider[]): Rider | undefined {
+  return ridersList.find(r => r.id === riderId);
+}
+
+// Generate WhatsApp message URL with order details
+function getWhatsAppUrl(phone: string, order: Order): string {
+  const message = `Hello! Order #${order.id.slice(-6)} is ready for delivery.
+
+Customer: ${order.customer_name || 'N/A'}
+Address: ${order.delivery_address}
+Total: KES ${order.total_amount}
+
+Please confirm delivery.`;
+  return `https://wa.me/${phone.replace(/\+/g, '')}?text=${encodeURIComponent(message)}`;
+}
+
+// Generate SMS URL
+function getSmsUrl(phone: string, order: Order): string {
+  const message = `Order #${order.id.slice(-6)} - Address: ${order.delivery_address} - Total: KES ${order.total_amount}`;
+  return `sms:${phone}?body=${encodeURIComponent(message)}`;
+}
+
+// Generate call URL
+function getCallUrl(phone: string): string {
+  return `tel:${phone}`;
 }
 
   const handleConfirmOrder = async (order: Order) => {
@@ -373,6 +404,45 @@ function getActorId(userId?: string): string {
                               <span className="truncate">{order.delivery_address}</span>
                             </span>
                           </div>
+
+                          {/* Rider Info - Show when rider is assigned */}
+                          {order.current_rider_id && (
+                            <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <Truck className="w-4 h-4 text-purple-600" />
+                                  <span className="font-medium text-purple-900 text-sm">
+                                    {order.current_rider_name || 'Rider Assigned'}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <a
+                                    href={getCallUrl(getRiderById(order.current_rider_id, riders)?.phone || '')}
+                                    className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                                    title="Call Rider"
+                                  >
+                                    <Phone className="w-4 h-4" />
+                                  </a>
+                                  <a
+                                    href={getWhatsAppUrl(getRiderById(order.current_rider_id, riders)?.phone || '', order)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                                    title="WhatsApp Rider"
+                                  >
+                                    <MessageCircle className="w-4 h-4" />
+                                  </a>
+                                  <a
+                                    href={getSmsUrl(getRiderById(order.current_rider_id, riders)?.phone || '', order)}
+                                    className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                    title="SMS Rider"
+                                  >
+                                    <Send className="w-4 h-4" />
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
