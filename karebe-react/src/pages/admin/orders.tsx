@@ -415,7 +415,13 @@ function getCallUrl(phone: string): string {
                                     {order.current_rider_name || 'Rider Assigned'}
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-2">
+                              </div>
+                              {/* Show rider phone number */}
+                              <div className="mt-2 flex items-center gap-2 text-purple-700 text-xs">
+                                <Phone className="w-3 h-3" />
+                                <span>{getRiderById(order.current_rider_id, riders)?.phone || 'Phone not available'}</span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-2">
                                   <a
                                     href={getCallUrl(getRiderById(order.current_rider_id, riders)?.phone || '')}
                                     className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
@@ -439,7 +445,6 @@ function getCallUrl(phone: string): string {
                                   >
                                     <Send className="w-4 h-4" />
                                   </a>
-                                </div>
                               </div>
                             </div>
                           )}
