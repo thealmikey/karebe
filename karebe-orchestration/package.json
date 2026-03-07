@@ -2,6 +2,7 @@
   "name": "karebe-orchestration-service",
   "version": "1.0.0",
   "description": "Hybrid WhatsApp-First Order Orchestration System",
+  "type": "commonjs",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
