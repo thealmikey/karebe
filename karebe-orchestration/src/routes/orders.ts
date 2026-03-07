@@ -216,9 +216,12 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
 router.post('/:id/assign-rider', async (req: Request, res: Response) => {
   try {
     const orderId = req.params.id;
+    logger.info('assign-rider endpoint called', { orderId, body: req.body });
+    
     const validation = assignRiderSchema.safeParse(req.body);
     
     if (!validation.success) {
+      logger.warn('assign-rider validation failed', { orderId, errors: validation.error.errors });
       return res.status(400).json({
         success: false,
         error: 'Validation failed',
@@ -226,7 +229,9 @@ router.post('/:id/assign-rider', async (req: Request, res: Response) => {
       });
     }
 
+    logger.info('assign-rider calling orderService', { orderId, request: validation.data });
     const order = await orderService.assignRider(orderId, validation.data);
+    logger.info('assign-rider success', { orderId, orderStatus: order.status });
     
     res.json({
       success: true,
@@ -234,7 +239,7 @@ router.post('/:id/assign-rider', async (req: Request, res: Response) => {
       message: 'Rider assigned successfully',
     });
   } catch (error) {
-    logger.error('Error assigning rider', { error, orderId: req.params.id, body: req.body });
+    logger.error('Error assigning rider', { error, orderId: req.params.id, body: req.body, errorMessage: error instanceof Error ? error.message : 'Unknown', errorStack: error instanceof Error ? error.stack : null });
     
     if (error instanceof Error) {
       if (error.name === 'RiderUnavailableError') {
@@ -244,11 +249,14 @@ router.post('/:id/assign-rider', async (req: Request, res: Response) => {
           message: error.message,
         });
       }
+      // Log the full error for debugging
+      logger.error('Full error details', { error: JSON.stringify(error) });
     }
     
     res.status(500).json({
       success: false,
       error: 'Failed to assign rider',
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });

@@ -221,6 +221,15 @@ export class OrderService {
    * Assign rider to order
    */
   async assignRider(orderId: string, request: AssignRiderRequest): Promise<Order> {
+    // Get current order first for logging
+    const currentOrder = await this.getOrder(orderId);
+    logger.info('assignRider: Starting', { 
+      orderId, 
+      riderId: request.rider_id,
+      adminId: request.admin_id,
+      currentStatus: currentOrder?.status,
+    });
+    
     // Call the database function for atomic rider assignment
     const { data, error } = await supabase.rpc('assign_rider_to_order', {
       p_order_id: orderId,
@@ -228,14 +237,28 @@ export class OrderService {
       p_admin_id: request.admin_id,
     });
 
+    logger.info('assign_rider_to_order RPC result', { 
+      orderId, 
+      data, 
+      error,
+      rawError: error ? JSON.stringify(error) : null,
+    });
+
     if (error) {
-      logger.error('Failed to assign rider', { error, orderId, request });
+      logger.error('Failed to assign rider - RPC error', { error, orderId, request });
       throw error;
     }
 
     const result = data as { success: boolean; error?: string; current_status?: string; current_order?: string };
     
+    logger.info('assign_rider_to_order result parsing', { 
+      orderId, 
+      result,
+      resultString: JSON.stringify(result),
+    });
+    
     if (!result.success) {
+      logger.warn('assign_rider_to_order returned failure', { orderId, result });
       if (result.error === 'Rider not available') {
         throw new RiderUnavailableError(
           `Rider ${request.rider_id} is not available`,
