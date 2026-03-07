@@ -272,51 +272,63 @@ function getActorId(userId?: string): string {
   return (
     <div className="min-h-screen bg-brand-50">
       {/* Header */}
-      <header className="bg-white border-b border-brand-100">
+      <header className="bg-white border-b border-brand-100 sticky top-0 z-10">
         <Container>
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-display font-bold text-brand-900">
-                Order Management
-              </h1>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between h-auto sm:h-16 py-3 sm:py-0 gap-2 sm:gap-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <h1 className="text-lg sm:text-xl font-display font-bold text-brand-900">
+                  Order Management
+                </h1>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={fetchOrders}
+                  disabled={loading}
+                  className="hidden sm:flex"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={fetchOrders}
                 disabled={loading}
+                className="sm:hidden p-2"
               >
-                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/admin')}>
+            <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="whitespace-nowrap text-sm">
                 Dashboard
               </Button>
-              <span className="text-brand-600">{user?.name}</span>
-              <Button variant="ghost" size="sm" onClick={logout}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+              <span className="text-sm text-brand-600 hidden sm:inline">{user?.name}</span>
+              <Button variant="ghost" size="sm" onClick={logout} className="whitespace-nowrap">
+                <LogOut className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
         </Container>
       </header>
 
-      <Container className="py-6">
+      <Container className="py-4 sm:py-6 px-2 sm:px-4">
         {error && (
-          <div className="bg-danger-50 border border-danger-200 rounded-lg p-4 mb-4 flex items-center gap-2 text-danger-700">
-            <AlertCircle className="w-5 h-5" />
-            {error}
+          <div className="bg-danger-50 border border-danger-200 rounded-lg p-3 sm:p-4 mb-4 flex items-center gap-2 text-danger-700">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <span className="text-sm">{error}</span>
           </div>
         )}
 
         {/* Orders List */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {orders.length === 0 && !loading ? (
             <Card>
-              <CardContent className="p-8 text-center text-brand-500">
-                <ShoppingCart className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <CardContent className="p-6 sm:p-8 text-center text-brand-500">
+                <ShoppingCart className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-4 opacity-50" />
                 <p>No orders found</p>
               </CardContent>
             </Card>
@@ -327,64 +339,73 @@ function getActorId(userId?: string): string {
               const isExpanded = expandedOrder === order.id;
               
               return (
-                <Card key={order.id} className={isExpanded ? 'ring-2 ring-brand-200' : ''}>
-                  <CardContent className="p-4">
-                    {/* Order Header */}
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4">
-                        <div className={`p-2 rounded-lg ${status.color}`}>
-                          <StatusIcon className="w-5 h-5" />
+                <Card key={order.id} className={`${isExpanded ? 'ring-2 ring-brand-200' : ''} overflow-hidden`}>
+                  <CardContent className="p-3 sm:p-4">
+                    {/* Order Header - Mobile stacked layout */}
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                      {/* Left side: Order info */}
+                      <div className="flex items-start gap-3 sm:gap-4">
+                        <div className={`p-2 rounded-lg ${status.color} flex-shrink-0`}>
+                          <StatusIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-brand-900">
-                              Order #{order.id.slice(-6)}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold text-brand-900 text-sm sm:text-base">
+                              #{order.id.slice(-6)}
                             </h3>
-                            <Badge className={status.color}>
+                            <Badge className={`${status.color} text-xs`}>
                               {status.label}
                             </Badge>
                           </div>
-                          <p className="text-sm text-brand-600 mt-1">
-                            {order.customer_name || 'Unknown'} • {order.customer_phone}
+                          <p className="text-sm text-brand-600 mt-1 truncate">
+                            {order.customer_name || 'Unknown'}
                           </p>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-brand-500">
+                          <p className="text-sm text-brand-500 truncate">
+                            {order.customer_phone}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs sm:text-sm text-brand-500">
                             <span className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
+                              <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                               {formatTime(order.created_at)}
                             </span>
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              {order.delivery_address.slice(0, 30)}...
+                            <span className="flex items-center gap-1 truncate max-w-[150px] sm:max-w-none">
+                              <MapPin className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                              <span className="truncate">{order.delivery_address}</span>
                             </span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-right mr-4">
-                          <p className="font-bold text-brand-900">
+
+                      {/* Right side: Price, actions, expand */}
+                      <div className="flex sm:flex-col items-center justify-between sm:items-end gap-2 sm:gap-2 ml-auto sm:ml-0">
+                        <div className="text-right">
+                          <p className="font-bold text-brand-900 text-sm sm:text-base">
                             KES {order.total_amount.toLocaleString()}
                           </p>
-                          <p className="text-sm text-brand-500">
+                          <p className="text-xs sm:text-sm text-brand-500">
                             {order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}
                           </p>
                         </div>
-                        {getActionButtons(order)}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
-                        >
-                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          {getActionButtons(order)}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                            className="p-2"
+                          >
+                            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Expanded Details */}
+                    {/* Expanded Details - Responsive grid */}
                     {isExpanded && (
                       <div className="mt-4 pt-4 border-t border-brand-100">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <h4 className="font-medium text-brand-900 mb-2">Order Items</h4>
+                            <h4 className="font-medium text-brand-900 mb-2 text-sm sm:text-base">Order Items</h4>
                             <ul className="space-y-2">
                               {order.items?.map((item, idx) => (
                                 <li key={idx} className="flex justify-between text-sm">
@@ -392,7 +413,7 @@ function getActorId(userId?: string): string {
                                     {item.quantity}x {item.product_name}
                                     {item.variant && <span className="text-brand-500"> ({item.variant})</span>}
                                   </span>
-                                  <span className="text-brand-900">
+                                  <span className="text-brand-900 font-medium">
                                     KES {(item.quantity * item.unit_price).toLocaleString()}
                                   </span>
                                 </li>
@@ -400,18 +421,18 @@ function getActorId(userId?: string): string {
                             </ul>
                           </div>
                           <div>
-                            <h4 className="font-medium text-brand-900 mb-2">Delivery Details</h4>
+                            <h4 className="font-medium text-brand-900 mb-2 text-sm sm:text-base">Delivery Details</h4>
                             <div className="space-y-2 text-sm">
                               <p className="flex items-start gap-2">
-                                <Phone className="w-4 h-4 mt-0.5 text-brand-500" />
-                                <span className="text-brand-700">{order.customer_phone}</span>
+                                <Phone className="w-4 h-4 mt-0.5 text-brand-500 flex-shrink-0" />
+                                <span className="text-brand-700 break-all">{order.customer_phone}</span>
                               </p>
                               <p className="flex items-start gap-2">
-                                <MapPin className="w-4 h-4 mt-0.5 text-brand-500" />
-                                <span className="text-brand-700">{order.delivery_address}</span>
+                                <MapPin className="w-4 h-4 mt-0.5 text-brand-500 flex-shrink-0" />
+                                <span className="text-brand-700 break-words">{order.delivery_address}</span>
                               </p>
                               {order.delivery_notes && (
-                                <p className="text-brand-500 italic">
+                                <p className="text-brand-500 italic text-xs sm:text-sm">
                                   Note: {order.delivery_notes}
                                 </p>
                               )}
@@ -434,12 +455,12 @@ function getActorId(userId?: string): string {
         </div>
       </Container>
 
-      {/* Rider Selection Dialog */}
+      {/* Rider Selection Dialog - Mobile responsive */}
       <Dialog open={showRiderDialog} onOpenChange={setShowRiderDialog}>
-        <div className="p-6 bg-white rounded-lg max-w-md w-full">
-          <h2 className="text-xl font-bold mb-4">Assign Rider</h2>
+        <div className="p-4 sm:p-6 bg-white rounded-lg max-w-md w-full mx-4">
+          <h2 className="text-lg sm:text-xl font-bold mb-2 sm:mb-4">Assign Rider</h2>
           <p className="text-sm text-gray-600 mb-4">
-            Select a rider for order: {selectedOrder?.order_number}
+            Select a rider for order: #{selectedOrder?.id?.slice(-6)}
           </p>
           
           {ridersLoading ? (
@@ -455,7 +476,7 @@ function getActorId(userId?: string): string {
                 <select
                   value={selectedRiderId}
                   onChange={(e) => setSelectedRiderId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2.5 sm:py-2 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                   <option value="">-- Select a rider --</option>
                   {riders.map((rider) => (
@@ -466,7 +487,7 @@ function getActorId(userId?: string): string {
                 </select>
               </div>
               
-              <div className="flex gap-3 justify-end">
+              <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -474,13 +495,14 @@ function getActorId(userId?: string): string {
                     setSelectedOrder(null);
                     setSelectedRiderId('');
                   }}
+                  className="w-full sm:w-auto order-2 sm:order-1"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleConfirmAssignRider}
                   disabled={!selectedRiderId || actionLoading === selectedOrder?.id}
-                  className="bg-purple-600 hover:bg-purple-700"
+                  className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 order-1 sm:order-2"
                 >
                   {actionLoading === selectedOrder?.id ? (
                     <RefreshCw className="w-4 h-4 animate-spin mr-2" />
