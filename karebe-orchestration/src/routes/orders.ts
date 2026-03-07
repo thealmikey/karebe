@@ -38,7 +38,7 @@ const createOrderSchema = z.object({
 const updateStatusSchema = z.object({
   status: z.nativeEnum(OrderStatus),
   actor_type: z.nativeEnum(ActorType),
-  actor_id: z.string().uuid(),
+  actor_id: z.string().min(1),  // Allow any non-empty string for now
   confirmation_method: z.nativeEnum(ConfirmationMethod).optional(),
   expected_version: z.number().int().optional(),
   metadata: z.record(z.unknown()).optional(),
