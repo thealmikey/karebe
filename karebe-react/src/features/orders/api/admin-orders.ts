@@ -106,7 +106,7 @@ export interface UpdateStatusRequest {
   status: OrderStatus;
   actor_type: 'admin' | 'rider' | 'system' | 'customer' | 'webhook';
   actor_id: string;
-  confirmation_method?: 'DIGITAL_SIGNATURE' | 'MANUAL_ACKNOWLEDGMENT';
+  confirmation_method?: 'DIGITAL' | 'MANUAL';
   expected_version?: number;
   notes?: string;
 }
