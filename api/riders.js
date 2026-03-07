@@ -26,7 +26,8 @@ module.exports = async function handler(req, res) {
     const ordersIndex = urlParts.indexOf('orders');
     
     // GET /api/riders/:id/orders - fetch from delivery_assignments OR orders table
-    if (req.method === "GET" && ordersIndex === 2 && urlParts.length === 3) {
+    // urlParts: ['api', 'riders', '<riderId>', 'orders']
+    if (req.method === "GET" && ordersIndex === 2 && urlParts.length >= 3) {
         const { status } = req.query;
         
         console.log('[RiderAPI] Fetching orders for rider:', riderId, 'status:', status);
