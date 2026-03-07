@@ -59,6 +59,18 @@
       "destination": "/karebe-react/dist/index.html"
     },
     {
+      "source": "/admin/products",
+      "destination": "/karebe-react/dist/index.html"
+    },
+    {
+      "source": "/admin/branches",
+      "destination": "/karebe-react/dist/index.html"
+    },
+    {
+      "source": "/admin/settings",
+      "destination": "/karebe-react/dist/index.html"
+    },
+    {
       "source": "/admin/:path*",
       "destination": "/karebe-react/dist/index.html"
     },
