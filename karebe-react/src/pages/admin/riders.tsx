@@ -58,7 +58,7 @@ export default function RidersPage() {
       const { data, error } = await supabase
         .from('riders')
         .select('*')
-        .order('name');
+        .order('full_name');
 
       if (error) throw error;
       setRiders(data || []);
@@ -66,8 +66,8 @@ export default function RidersPage() {
       console.error('Failed to load riders:', error);
       // Try to load from demo data if table doesn't exist
       setRiders([
-        { id: 'rider-001', name: 'John Doe', phone: '+254712345678', status: 'AVAILABLE', is_active: true },
-        { id: 'rider-002', name: 'Jane Smith', phone: '+254723456789', status: 'BUSY', is_active: true },
+        { id: 'rider-001', full_name: 'John Doe', phone: '+254712345678', status: 'AVAILABLE', is_active: true },
+        { id: 'rider-002', full_name: 'Jane Smith', phone: '+254723456789', status: 'BUSY', is_active: true },
       ]);
     } finally {
       setIsLoading(false);
@@ -125,7 +125,7 @@ export default function RidersPage() {
   };
 
   const filteredRiders = riders.filter((rider) =>
-    rider.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    rider.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     rider.phone.includes(searchQuery)
   );
 
@@ -213,7 +213,7 @@ export default function RidersPage() {
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="text-lg">{rider.name}</CardTitle>
+                        <CardTitle className="text-lg">{rider.full_name}</CardTitle>
                         <CardDescription className="flex items-center gap-1 mt-1">
                           <Phone className="h-3 w-3" />
                           {rider.phone}
