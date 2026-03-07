@@ -145,6 +145,13 @@ export class OrderService {
       throw new Error(`Order not found: ${orderId}`);
     }
 
+    logger.info('Updating order status', { 
+      orderId, 
+      currentStatus: order.status, 
+      newStatus: request.status,
+      actorType: request.actor_type 
+    });
+
     // Validate state transition
     stateMachine.assertValidTransition(
       order.status,
