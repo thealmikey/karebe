@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ShoppingCart, LogIn } from 'lucide-react';
+import { ShoppingCart, LogIn, Phone, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Container } from '@/components/layout/container';
 import { FloatingActions } from '@/components/layout/floating-actions';
@@ -53,6 +53,27 @@ export function CatalogPage() {
   return (
     <div className="min-h-screen bg-brand-50">
       <Container>
+        {/* Banner Image */}
+        <div className="-mx-4 md:-mx-8 -mt-4 md:-mt-8 mb-8">
+          <img 
+            src="/assets/images/karebe_banner.png" 
+            alt="Karebe Wines & Spirits" 
+            className="w-full h-48 md:h-64 object-cover rounded-b-2xl shadow-lg"
+          />
+        </div>
+
+        {/* Contact Info Bar */}
+        <div className="bg-brand-800 text-white px-4 py-3 rounded-lg mb-8 flex flex-wrap items-center justify-center gap-6 shadow-md">
+          <div className="flex items-center gap-2">
+            <Phone className="w-5 h-5" />
+            <span className="font-medium">+254 724 721627</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CreditCard className="w-5 h-5" />
+            <span className="font-medium">Till: 913 7883</span>
+          </div>
+        </div>
+
         <div className="py-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
