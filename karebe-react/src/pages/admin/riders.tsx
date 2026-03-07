@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Truck, Plus, Phone, Search, MoreVertical, Trash2, Edit, Check, X } from 'lucide-react';
+import { Truck, Plus, Phone, Search, MoreVertical, Trash2, Edit, Check, X, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { AuthGuard } from '@/features/auth/components/auth-guard';
 import { supabase } from '@/lib/supabase';
+
+interface Branch {
+  id: string;
+  name: string;
+}
 
 interface Rider {
   id: string;
@@ -21,6 +26,7 @@ interface Rider {
 
 export default function RidersPage() {
   const [riders, setRiders] = useState<Rider[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -30,11 +36,22 @@ export default function RidersPage() {
     name: '',
     phone: '',
     whatsapp_number: '',
+    branch_id: '',
   });
 
   useEffect(() => {
     loadRiders();
+    loadBranches();
   }, []);
+
+  const loadBranches = async () => {
+    try {
+      const { data } = await supabase.from('branches').select('id, name').order('name');
+      setBranches(data || []);
+    } catch (error) {
+      console.error('Failed to load branches:', error);
+    }
+  };
 
   const loadRiders = async () => {
     try {
@@ -65,6 +82,7 @@ export default function RidersPage() {
         name: newRider.name,
         phone: newRider.phone,
         whatsapp_number: newRider.whatsapp_number,
+        branch_id: newRider.branch_id || null,
         status: 'AVAILABLE',
         is_active: true,
       });
@@ -72,7 +90,7 @@ export default function RidersPage() {
       if (error) throw error;
 
       setIsAddDialogOpen(false);
-      setNewRider({ name: '', phone: '', whatsapp_number: '' });
+      setNewRider({ name: '', phone: '', whatsapp_number: '', branch_id: '' });
       loadRiders();
     } catch (error) {
       console.error('Failed to add rider:', error);
@@ -263,6 +281,25 @@ export default function RidersPage() {
                   onChange={(e) => setNewRider({ ...newRider, whatsapp_number: e.target.value })}
                   placeholder="254712345678"
                 />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="rider-branch">Branch (Optional)</Label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <select
+                    id="rider-branch"
+                    value={newRider.branch_id}
+                    onChange={(e) => setNewRider({ ...newRider, branch_id: e.target.value })}
+                    className="w-full pl-10 pr-3 py-2 border rounded-md"
+                  >
+                    <option value="">No branch assigned</option>
+                    {branches.map((branch) => (
+                      <option key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
             <DialogFooter>
