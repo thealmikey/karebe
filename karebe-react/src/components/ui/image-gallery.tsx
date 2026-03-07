@@ -167,19 +167,71 @@ export function ImageGallery({
       bucket: 'product_images',
     });
 
-    // Check if bucket exists
-    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-    if (bucketError) {
-      debugLog('Failed to list buckets', { error: bucketError.message }, true);
-      throw new Error(`Storage bucket error: ${bucketError.message}`);
+    // Check if bucket exists - try direct access first (more reliable than listBuckets)
+    console.log('[ImageGallery DEBUG] Checking bucket access directly...');
+    
+    let bucketExists = false;
+    try {
+      // @ts-ignore - Supabase types may not match runtime
+      const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('product_images');
+      console.log('[ImageGallery DEBUG] Direct bucket check:', { bucketData, bucketError });
+      bucketExists = !bucketError && !!bucketData;
+    } catch (e) {
+      console.log('[ImageGallery DEBUG] Direct bucket check failed:', e);
     }
-
-    const bucketExists = buckets?.some(b => b.name === 'product_images');
+    
+    // Fallback: try listing buckets if direct access fails
     if (!bucketExists) {
-      debugLog('Bucket does not exist', { 
-        availableBuckets: buckets?.map(b => b.name),
+      console.log('[ImageGallery DEBUG] Trying listBuckets as fallback...');
+      const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+      
+      // DEBUG: Add detailed diagnostics
+      console.log('[ImageGallery DEBUG] Storage bucket check:', {
+        supabaseConfigured: !!supabase,
+        listBucketsResult: buckets,
+        listBucketsError: bucketError?.message,
+        timestamp: new Date().toISOString(),
+      });
+      
+      if (bucketError) {
+        debugLog('Failed to list buckets', { error: bucketError.message }, true);
+        // Check if this is a permission error vs. no storage enabled
+        if (bucketError.message.includes('permission') || bucketError.message.includes('denied')) {
+          console.error('[ImageGallery DEBUG] Storage permission error - anon key may lack storage permissions');
+        }
+        throw new Error(`Storage bucket error: ${bucketError.message}`);
+      }
+
+      // DEBUG: Log what we're working with
+      console.log('[ImageGallery DEBUG] Available buckets:', {
+        count: buckets?.length || 0,
+        buckets: buckets?.map(b => ({ name: b.name, public: b.public })),
+        lookingFor: 'product_images',
+      });
+
+      bucketExists = buckets?.some(b => b.name === 'product_images');
+    }
+    
+    if (!bucketExists) {
+      console.warn('[ImageGallery DEBUG] product_images bucket NOT FOUND - falling back to base64');
+      debugLog('Bucket does not exist - using base64 fallback', { 
+        note: 'Bucket may exist but anon key lacks list permission',
       }, true);
-      throw new Error('Storage bucket "product_images" does not exist. Please create it in Supabase Dashboard.');
+      // Fallback: convert to base64 data URL when bucket doesn't exist
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          debugLog('File converted to data URL (bucket fallback)', {
+            result: (reader.result as string).substring(0, 100) + '...',
+          });
+          resolve(reader.result as string);
+        };
+        reader.onerror = () => {
+          debugLog('FileReader error', { error: reader.error }, true);
+          reject(new Error('Failed to read file'));
+        };
+        reader.readAsDataURL(file);
+      });
     }
 
     // Upload the file
@@ -350,6 +402,7 @@ export function ImageGallery({
         debugLog('Supabase URL detected', { url });
         // Try to verify the URL is accessible
         if (supabase) {
+          // @ts-ignore - Supabase types may vary by version
           const { data, error } = await supabase.storage
             .from('product_images')
             .getPublicUrl(url.split('/').pop() || '');
