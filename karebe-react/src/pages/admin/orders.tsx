@@ -73,13 +73,24 @@ function OrdersPageContent() {
     return () => clearInterval(interval);
   }, []);
 
+// Helper to get a valid UUID or fallback to default
+function getActorId(userId?: string): string {
+  // If userId is a valid UUID, use it
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (userId && uuidRegex.test(userId)) {
+    return userId;
+  }
+  // Otherwise use default UUID for demo/production
+  return '00000000-0000-0000-0000-000000000001';
+}
+
   const handleConfirmOrder = async (order: Order) => {
     setActionLoading(order.id);
     try {
       await updateOrderStatus(order.id, {
         status: 'CONFIRMED_BY_MANAGER',
         actor_type: 'admin',
-        actor_id: '00000000-0000-0000-0000-000000000001',
+        actor_id: getActorId(user?.id),
         expected_version: order.version,
       });
       await fetchOrders();
@@ -96,7 +107,7 @@ function OrdersPageContent() {
       await updateOrderStatus(order.id, {
         status: 'DELIVERY_REQUEST_STARTED',
         actor_type: 'admin',
-        actor_id: '00000000-0000-0000-0000-000000000001',
+        actor_id: getActorId(user?.id),
         expected_version: order.version,
       });
       await fetchOrders();
@@ -123,7 +134,7 @@ function OrdersPageContent() {
         await updateOrderStatus(order.id, {
           status: 'RIDER_CONFIRMED_DIGITAL',
           actor_type: 'admin',
-          actor_id: '00000000-0000-0000-0000-000000000001',
+          actor_id: getActorId(user?.id),
           expected_version: order.version,
         });
         await fetchOrders();
