@@ -299,7 +299,7 @@ function RiderPortalContent() {
 
 export function RiderPortalPage() {
   return (
-    <AuthGuard requiredRole="rider">
+    <AuthGuard requiredRole={['rider', 'admin', 'super-admin']}>
       <RiderPortalContent />
     </AuthGuard>
   );
