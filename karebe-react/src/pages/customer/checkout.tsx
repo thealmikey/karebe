@@ -24,18 +24,40 @@ export default function CheckoutPage() {
     address: '',
     deliveryNotes: '',
   });
+  // Default till number from branch config (should match branch-config.tsx default)
+  const DEFAULT_TILL_NUMBER = '9137883';
+  
   const [paymentType, setPaymentType] = useState<'buy_goods' | 'stk_push' | 'both'>('buy_goods');
-  const [tillNumber, setTillNumber] = useState('123456');
+  const [tillNumber, setTillNumber] = useState(DEFAULT_TILL_NUMBER);
 
   // Fetch branch payment config
   useEffect(() => {
     async function fetchPaymentConfig() {
-      const { data } = await supabase.from('branches').select('mpesa_payment_type, mpesa_shortcode').eq('is_main', true).single() as { data: BranchConfig | null };
+      console.log('[Checkout] Fetching payment config from Supabase...');
+      const { data, error } = await supabase.from('branches').select('mpesa_payment_type, mpesa_shortcode').eq('is_main', true).single() as { data: BranchConfig | null, error: any };
+      
+      console.log('[Checkout] Supabase response:', { data, error });
+      
+      if (error) {
+        console.error('[Checkout] Error fetching payment config:', error);
+        // Fall back to defaults - no need to change state since we already have DEFAULT_TILL_NUMBER
+        return;
+      }
+      
+      if (!data) {
+        console.warn('[Checkout] No branch data found, using default till number:', DEFAULT_TILL_NUMBER);
+        return;
+      }
+      
       if (data?.mpesa_payment_type) {
+        console.log('[Checkout] Setting payment type:', data.mpesa_payment_type);
         setPaymentType(data.mpesa_payment_type);
       }
       if (data?.mpesa_shortcode) {
+        console.log('[Checkout] Setting till number:', data.mpesa_shortcode);
         setTillNumber(data.mpesa_shortcode);
+      } else {
+        console.warn('[Checkout] No mpesa_shortcode found in data, using default:', DEFAULT_TILL_NUMBER);
       }
     }
     fetchPaymentConfig();

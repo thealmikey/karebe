@@ -55,7 +55,7 @@ export default function BranchConfigPage() {
     } catch (error) {
       console.error('Failed to load branches:', error);
       setBranches([
-        { id: 'main-branch', name: 'Main Branch', address: '123 Main St, Nairobi', phone: '+254712345678', is_main: true, is_active: true, mpesa_shortcode: '123456' }
+        { id: 'main-branch', name: 'Main Branch', address: '123 Main St, Nairobi', phone: '+254712345678', is_main: true, is_active: true, mpesa_shortcode: '9137883' }
       ]);
     } finally {
       setIsLoading(false);

@@ -30,9 +30,11 @@ export function MpesaPaymentSection({
   const [manualCode, setManualCode] = useState('');
 
   // Get M-Pesa config for branch - use prop or fallback to default
+  // Default should match checkout.tsx DEFAULT_TILL_NUMBER = '9137883'
   const mpesaManager = new BranchMpesaManager();
-  const [localTillNumber] = useState(propTillNumber || '123456');
-  const tillNumber = propTillNumber || localTillNumber || '123456';
+  const DEFAULT_TILL_NUMBER = '9137883';
+  const [localTillNumber] = useState(propTillNumber || DEFAULT_TILL_NUMBER);
+  const tillNumber = propTillNumber || localTillNumber || DEFAULT_TILL_NUMBER;
   const formattedTill = tillNumber.replace(/(\d{3})(\d{3})/, '$1 $2');
 
   const copyToClipboard = () => {

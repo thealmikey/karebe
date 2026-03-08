@@ -5,6 +5,7 @@ export interface Rider {
   user_id: string | null;
   full_name: string;
   phone: string;
+  pin: string | null;
   whatsapp_number: string | null;
   branch_id: string | null;
   is_active: boolean;
@@ -33,6 +34,7 @@ export interface RiderLegacy {
 export interface RiderCreateInput {
   full_name: string;
   phone: string;
+  pin?: string;
   whatsapp_number?: string;
   branch_id?: string;
 }
@@ -40,6 +42,7 @@ export interface RiderCreateInput {
 export interface RiderUpdateInput {
   full_name?: string;
   phone?: string;
+  pin?: string;
   whatsapp_number?: string;
   branch_id?: string;
   is_active?: boolean;
@@ -102,6 +105,9 @@ export class RiderManager {
   }
 
   static async createRider(input: RiderCreateInput): Promise<Rider> {
+    // Generate a random 4-digit PIN if not provided
+    const pin = input.pin || Math.floor(1000 + Math.random() * 9000).toString();
+    
     const { data, error } = await supabase
       .from('riders')
       .insert({
@@ -109,6 +115,7 @@ export class RiderManager {
         user_id: null,
         full_name: input.full_name,
         phone: input.phone,
+        pin: pin,
         whatsapp_number: input.whatsapp_number || input.phone,
         branch_id: input.branch_id || null,
         is_active: true,

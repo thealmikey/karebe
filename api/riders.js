@@ -33,6 +33,43 @@ module.exports = async function handler(req, res) {
     const riderId = urlParts[1];
     const ordersIndex = urlParts.indexOf('orders');
     
+    // POST /api/riders/login - authenticate rider by phone + pin
+    if (req.method === "POST" && urlParts[1] === 'login') {
+        const { phone, pin } = req.body || {};
+        
+        console.log('[RiderAPI] Rider login attempt for phone:', phone);
+        
+        if (!phone || !pin) {
+            return res.status(400).json({ ok: false, error: "Phone and PIN are required" });
+        }
+        
+        // Query riders table for matching phone and pin
+        const { data: rider, error: riderError } = await supabase
+            .from("riders")
+            .select("*, branches(*)")
+            .eq("phone", phone)
+            .eq("pin", pin)
+            .eq("is_active", true)
+            .single();
+        
+        if (riderError || !rider) {
+            console.log('[RiderAPI] Invalid credentials:', riderError?.message);
+            return res.status(401).json({ ok: false, error: "Invalid phone or PIN" });
+        }
+        
+        console.log('[RiderAPI] Login success for rider:', rider.full_name);
+        return res.status(200).json({ 
+            ok: true, 
+            rider: {
+                id: rider.id,
+                name: rider.full_name,
+                phone: rider.phone,
+                branch_id: rider.branch_id,
+                branch: rider.branches
+            }
+        });
+    }
+
     // GET /api/riders/:id/orders - fetch from delivery_assignments OR orders table
     // urlParts: ['api', 'riders', '<riderId>', 'orders']
     if (req.method === "GET" && ordersIndex === 2 && urlParts.length >= 3) {

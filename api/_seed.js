@@ -47,7 +47,9 @@
       isMain: true,
       location: "Wangige (Main Branch)",
       phone: "+254701111111",
-      onShiftUserId: "u_wangige_admin"
+      onShiftUserId: "u_wangige_admin",
+      mpesa_shortcode: "9137883",
+      mpesa_payment_type: "buy_goods"
     },
     {
       id: "b_karura",
@@ -55,7 +57,9 @@
       isMain: false,
       location: "Karura",
       phone: "+254702222222",
-      onShiftUserId: "u_karura_admin"
+      onShiftUserId: "u_karura_admin",
+      mpesa_shortcode: "9137883",
+      mpesa_payment_type: "buy_goods"
     }
   ],
   paymentInfrastructure: {

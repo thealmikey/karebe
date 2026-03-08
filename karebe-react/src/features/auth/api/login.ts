@@ -180,3 +180,56 @@ export async function customerLogin(phone: string): Promise<LoginResponse> {
     };
   }
 }
+
+/**
+ * Rider login via phone + PIN
+ * Validates rider credentials and returns rider data
+ */
+export interface RiderLoginCredentials {
+  phone: string;
+  pin: string;
+}
+
+export interface RiderLoginResponse {
+  ok: boolean;
+  rider?: {
+    id: string;
+    name: string;
+    phone: string;
+    branch_id: string;
+    branch?: any;
+  };
+  error?: string;
+}
+
+export async function riderLogin(credentials: RiderLoginCredentials): Promise<RiderLoginResponse> {
+  try {
+    const response = await fetch('/api/riders/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok) {
+      return {
+        ok: false,
+        error: data.error || 'Invalid phone or PIN',
+      };
+    }
+
+    return {
+      ok: true,
+      rider: data.rider,
+    };
+  } catch (error) {
+    console.error('Rider login error:', error);
+    return {
+      ok: false,
+      error: 'An unexpected error occurred. Please try again.',
+    };
+  }
+}
