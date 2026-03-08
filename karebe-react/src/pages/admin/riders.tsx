@@ -9,29 +9,32 @@ import { Label } from '@/components/ui/label';
 import { AuthGuard } from '@/features/auth/components/auth-guard';
 import { supabase } from '@/lib/supabase';
 
+// Extended Rider interface with status field needed by UI
+interface RiderWithStatus {
+  id: string;
+  user_id: string | null;
+  full_name: string;
+  phone: string;
+  whatsapp_number: string | null;
+  branch_id: string | null;
+  is_active: boolean;
+  created_at: string;
+  status?: string;
+}
+
 interface Branch {
   id: string;
   name: string;
 }
 
-interface Rider {
-  id: string;
-  name: string;
-  phone: string;
-  whatsapp_number?: string;
-  status: string;
-  branch_id?: string;
-  is_active: boolean;
-}
-
 export default function RidersPage() {
-  const [riders, setRiders] = useState<Rider[]>([]);
+  const [riders, setRiders] = useState<RiderWithStatus[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingRider, setEditingRider] = useState<Rider | null>(null);
+  const [editingRider, setEditingRider] = useState<RiderWithStatus | null>(null);
   const [newRider, setNewRider] = useState({
     name: '',
     phone: '',
@@ -66,8 +69,8 @@ export default function RidersPage() {
       console.error('Failed to load riders:', error);
       // Try to load from demo data if table doesn't exist
       setRiders([
-        { id: 'rider-001', full_name: 'John Doe', phone: '+254712345678', status: 'AVAILABLE', is_active: true },
-        { id: 'rider-002', full_name: 'Jane Smith', phone: '+254723456789', status: 'BUSY', is_active: true },
+        { id: 'rider-001', full_name: 'John Doe', phone: '+254712345678', whatsapp_number: '+254712345678', branch_id: null, status: 'AVAILABLE', is_active: true, user_id: null, created_at: new Date().toISOString() },
+        { id: 'rider-002', full_name: 'Jane Smith', phone: '+254723456789', whatsapp_number: '+254723456789', branch_id: null, status: 'BUSY', is_active: true, user_id: null, created_at: new Date().toISOString() },
       ]);
     } finally {
       setIsLoading(false);
@@ -79,7 +82,7 @@ export default function RidersPage() {
       const riderId = 'rider-' + Date.now();
       const { error } = await supabase.from('riders').insert({
         id: riderId,
-        name: newRider.name,
+        full_name: newRider.name,
         phone: newRider.phone,
         whatsapp_number: newRider.whatsapp_number,
         branch_id: newRider.branch_id || null,
@@ -132,11 +135,11 @@ export default function RidersPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'AVAILABLE':
-        return <Badge className="bg-green-100 text-green-800">Available</Badge>;
+        return <Badge variant="secondary" className="bg-green-100 text-green-800">Available</Badge>;
       case 'BUSY':
-        return <Badge className="bg-yellow-100 text-yellow-800">Busy</Badge>;
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Busy</Badge>;
       case 'OFFLINE':
-        return <Badge className="bg-gray-100 text-gray-800">Offline</Badge>;
+        return <Badge variant="secondary" className="bg-gray-100 text-gray-800">Offline</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -144,7 +147,7 @@ export default function RidersPage() {
 
   if (isLoading) {
     return (
-      <AuthGuard requireAdmin>
+      <AuthGuard requiredRole={['admin', 'super-admin']}>
         <div className="flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
         </div>
@@ -153,7 +156,7 @@ export default function RidersPage() {
   }
 
   return (
-    <AuthGuard requireAdmin>
+    <AuthGuard requiredRole={['admin', 'super-admin']}>
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <header className="bg-white border-b sticky top-0 z-10">
@@ -226,7 +229,7 @@ export default function RidersPage() {
                     <div className="flex items-center justify-between mt-4">
                       <div className="flex items-center gap-2">
                         <Button
-                          variant={rider.is_active ? 'destructive' : 'default'}
+                          variant={rider.is_active ? 'danger' : 'primary'}
                           size="sm"
                           onClick={() => handleToggleStatus(rider)}
                         >
