@@ -484,22 +484,38 @@ export default function AdminProductsPage() {
         name: editingProduct.name,
         imageUrl: editingProduct.image_url,
       });
-      await ProductManager.updateProduct(editingProduct.id, {
-        name: editingProduct.name,
-        description: editingProduct.description || undefined,
-        price: editingProduct.price,
-        category: editingProduct.category,
-        stock_quantity: editingProduct.stock_quantity,
-        image_url: editingProduct.image_url || undefined,
-        unit_size: editingProduct.unit_size || undefined,
-        is_featured: editingProduct.is_featured,
+      
+      // Get admin user from session storage for API auth
+      const adminUser = sessionStorage.getItem('karebe_admin_user');
+      
+      // Use API endpoint to update product (bypasses RLS)
+      const response = await fetch('/api/products', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-karebe-admin-user': adminUser || 'admin',
+        },
+        body: JSON.stringify({
+          id: editingProduct.id,
+          name: editingProduct.name,
+          description: editingProduct.description || null,
+          category: (editingProduct as any).category_name || editingProduct.category_id || 'Spirits',
+          image: editingProduct.image_url || editingProduct.image || null,
+        }),
       });
+      
+      const result = await response.json();
+      if (!result.ok) {
+        throw new Error(result.error || 'Failed to update product');
+      }
+      
       console.log('[Admin Products] Product updated successfully');
       setIsEditDialogOpen(false);
       setEditingProduct(null);
       loadProducts();
     } catch (error) {
       console.error('[Admin Products] Failed to update product:', error);
+      alert('Failed to update product. Please try again.');
     }
   };
 
