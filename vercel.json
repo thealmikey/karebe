@@ -59,7 +59,23 @@
       "destination": "/api/payments/daraja/callback.js"
     },
     {
-      "source": "/admin/admins",
+      "source": "/cart",
+      "destination": "/karebe-react/dist/index.html"
+    },
+    {
+      "source": "/checkout",
+      "destination": "/karebe-react/dist/index.html"
+    },
+    {
+      "source": "/admin/login",
+      "destination": "/karebe-react/dist/index.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/karebe-react/dist/index.html"
+    },
+    {
+      "source": "/admin/orders",
       "destination": "/karebe-react/dist/index.html"
     },
     {
@@ -72,6 +88,14 @@
     },
     {
       "source": "/admin/settings",
+      "destination": "/karebe-react/dist/index.html"
+    },
+    {
+      "source": "/admin/riders",
+      "destination": "/karebe-react/dist/index.html"
+    },
+    {
+      "source": "/admin/admins",
       "destination": "/karebe-react/dist/index.html"
     },
     {
