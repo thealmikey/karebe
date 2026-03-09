@@ -93,12 +93,15 @@ module.exports = async function handler(req, res) {
         if (!id) return res.status(400).json({ ok: false, error: "id required" });
 
         // Strip fields not allowed in updates
-        const allowed = ["name", "description", "category", "image", "variants", "popular", "new_arrival", "branch_id"];
+        const allowed = ["name", "description", "category", "image", "variants", "popular", "new_arrival", "branch_id", "price", "stock_quantity", "unit_size", "is_featured", "is_available", "is_visible"];
         const safeUpdates = {};
         for (const key of allowed) {
             if (updates[key] !== undefined) safeUpdates[key] = updates[key];
         }
         if (updates.newArrival !== undefined) safeUpdates.new_arrival = updates.newArrival;
+        if (updates.isFeatured !== undefined) safeUpdates.is_featured = updates.isFeatured;
+        if (updates.isAvailable !== undefined) safeUpdates.is_available = updates.isAvailable;
+        if (updates.isVisible !== undefined) safeUpdates.is_visible = updates.isVisible;
 
         const { data, error } = await supabase
             .from("products")

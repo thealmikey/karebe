@@ -501,6 +501,12 @@ export default function AdminProductsPage() {
           description: editingProduct.description || null,
           category: (editingProduct as any).category_name || editingProduct.category_id || 'Spirits',
           image: editingProduct.image_url || editingProduct.image || null,
+          price: editingProduct.price,
+          stock_quantity: editingProduct.stock_quantity,
+          unit_size: editingProduct.unit_size || null,
+          is_featured: editingProduct.is_featured || false,
+          is_available: editingProduct.is_available !== false,
+          is_visible: editingProduct.is_visible !== false,
         }),
       });
       
