@@ -53,13 +53,21 @@ export default function AdminsPage() {
   const loadAdmins = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('id, email, name, phone, role, branch_id, is_active, created_at')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setAdmins(data || []);
+      // Use server-side API to bypass RLS
+      const response = await fetch('/api/admin/admins', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const result = await response.json();
+      
+      if (!result.ok) {
+        throw new Error(result.error || 'Failed to load admins');
+      }
+      
+      setAdmins(result.data || []);
     } catch (error) {
       console.error('Failed to load admins:', error);
       // Fallback to demo data
@@ -93,22 +101,31 @@ export default function AdminsPage() {
 
   const handleAddAdmin = async () => {
     try {
-      const { error } = await supabase.from('admin_users').insert({
-        email: newAdmin.email,
-        password_hash: newAdmin.password, // In production, hash this
-        name: newAdmin.name,
-        phone: newAdmin.phone || null,
-        role: newAdmin.role,
-        branch_id: newAdmin.branch_id || null,
-        is_active: true,
+      // Use server-side API to bypass RLS
+      const response = await fetch('/api/admin/admins', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: newAdmin.email,
+          password: newAdmin.password,
+          name: newAdmin.name,
+          phone: newAdmin.phone || null,
+          role: newAdmin.role,
+          branch_id: newAdmin.branch_id || null,
+          is_active: true,
+        }),
       });
 
-      if (error) {
-        if (error.code === '23505') {
+      const result = await response.json();
+
+      if (!result.ok) {
+        if (response.status === 409) {
           alert('An admin with this email already exists');
           return;
         }
-        throw error;
+        throw new Error(result.error || 'Failed to add admin');
       }
 
       setIsAddDialogOpen(false);
@@ -124,17 +141,26 @@ export default function AdminsPage() {
     if (!editingAdmin) return;
     
     try {
-      const { error } = await supabase
-        .from('admin_users')
-        .update({
+      // Use server-side API to bypass RLS
+      const response = await fetch('/api/admin/admins', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: editingAdmin.id,
           name: editingAdmin.name,
           phone: editingAdmin.phone,
           role: editingAdmin.role,
           branch_id: editingAdmin.branch_id || null,
-        })
-        .eq('id', editingAdmin.id);
+        }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!result.ok) {
+        throw new Error(result.error || 'Failed to update admin');
+      }
 
       setEditingAdmin(null);
       loadAdmins();
@@ -146,12 +172,24 @@ export default function AdminsPage() {
 
   const handleToggleActive = async (admin: AdminUser) => {
     try {
-      const { error } = await supabase
-        .from('admin_users')
-        .update({ is_active: !admin.is_active })
-        .eq('id', admin.id);
+      // Use server-side API to bypass RLS
+      const response = await fetch('/api/admin/admins', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: admin.id,
+          is_active: !admin.is_active,
+        }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
+
+      if (!result.ok) {
+        throw new Error(result.error || 'Failed to toggle admin status');
+      }
+
       loadAdmins();
     } catch (error) {
       console.error('Failed to toggle admin status:', error);
@@ -161,8 +199,21 @@ export default function AdminsPage() {
   const handleDeleteAdmin = async (adminId: string) => {
     if (!confirm('Are you sure you want to delete this admin?')) return;
     try {
-      const { error } = await supabase.from('admin_users').delete().eq('id', adminId);
-      if (error) throw error;
+      // Use server-side API to bypass RLS
+      const response = await fetch('/api/admin/admins', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: adminId }),
+      });
+
+      const result = await response.json();
+
+      if (!result.ok) {
+        throw new Error(result.error || 'Failed to delete admin');
+      }
+
       loadAdmins();
     } catch (error) {
       console.error('Failed to delete admin:', error);

@@ -47,6 +47,10 @@
       "destination": "/api/admin/login.js"
     },
     {
+      "source": "/api/admin/admins",
+      "destination": "/api/admin/admins.js"
+    },
+    {
       "source": "/api/payments/daraja/stkpush",
       "destination": "/api/payments/daraja/stkpush.js"
     },
