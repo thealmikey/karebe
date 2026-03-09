@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Copy, Check, Smartphone, AlertCircle, Timer, HelpCircle } from 'lucide-react';
+import { Copy, Check, AlertCircle, Timer, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BranchMpesaManager } from '@/features/admin/services/branch-mpesa-manager';
 import { MpesaService } from '@/features/payments/services/mpesa-service';
+import { MpesaIcon } from '@/components/ui/mpesa-icon';
 
 interface MpesaPaymentSectionProps {
   amount: number;
@@ -66,7 +67,7 @@ export function MpesaPaymentSection({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-white rounded-lg">
-                <Smartphone className="h-5 w-5 text-safaricom-green" />
+                <MpesaIcon className="h-5 w-5" />
               </div>
               <CardTitle className="text-white text-lg font-bold">
                 Lipa na M-Pesa

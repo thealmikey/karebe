@@ -126,3 +126,6 @@ export { Textarea, type TextareaProps } from './textarea';
 
 // Image Gallery
 export { ImageGallery, type ImageGalleryProps } from './image-gallery';
+
+// M-Pesa Icon
+export { MpesaIcon } from './mpesa-icon';

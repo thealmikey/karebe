@@ -1,5 +1,6 @@
-import { Smartphone, CreditCard, Banknote, Building2, Check } from 'lucide-react';
+import { CreditCard, Banknote, Building2, Check } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { MpesaIcon } from '@/components/ui/mpesa-icon';
 import type { PaymentMethod } from '../types';
 
 interface PaymentMethodSelectorProps {
@@ -13,7 +14,7 @@ const paymentMethods = [
     id: 'mpesa' as PaymentMethod,
     name: 'M-Pesa',
     description: 'Pay via M-Pesa mobile money',
-    icon: Smartphone,
+    icon: MpesaIcon,
     color: 'bg-green-500',
   },
   {
