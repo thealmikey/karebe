@@ -1,7 +1,7 @@
 // Use native fetch (available in Vercel Node.js 18+)
 
-// Get service role key from environment (should be set in Vercel project settings)
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://pwcqgwpkvesoowpnomad.supabase.co';
+// Hardcoded Supabase URL - environment variable not available in Vercel serverless
+const supabaseUrl = 'https://pwcqgwpkvesoowpnomad.supabase.co';
 const supabaseServiceKey = process.env.SUPABASE_ROLE_KEY;
 
 if (!supabaseServiceKey) {
