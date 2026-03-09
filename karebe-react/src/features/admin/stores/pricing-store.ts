@@ -1,4 +1,5 @@
 // Pricing Settings Store - Updated for Railway orchestration API
+// Uses VITE_ORCHESTRATION_API_URL environment variable with fallback to Railway production
 import { supabase } from '@/lib/supabase';
 
 const ORCHESTRATION_API = import.meta.env.VITE_ORCHESTRATION_API_URL || 'https://karebe-orchestration-production.up.railway.app';
