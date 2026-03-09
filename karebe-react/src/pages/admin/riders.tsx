@@ -40,7 +40,13 @@ export default function RidersPage() {
     phone: '',
     whatsapp_number: '',
     branch_id: '',
+    pin: '',
   });
+
+  // Generate a random 4-digit PIN
+  const generatePin = () => {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  };
 
   useEffect(() => {
     loadRiders();
@@ -79,12 +85,16 @@ export default function RidersPage() {
 
   const handleAddRider = async () => {
     try {
+      // Use provided PIN or generate a random 4-digit one
+      const pin = newRider.pin || generatePin();
+      
       // Let Supabase auto-generate the UUID for the rider id
       const { error } = await supabase.from('riders').insert({
         full_name: newRider.name,
         phone: newRider.phone,
         whatsapp_number: newRider.whatsapp_number,
         branch_id: newRider.branch_id || null,
+        pin: pin,
         status: 'AVAILABLE',
         is_active: true,
       });
@@ -92,8 +102,8 @@ export default function RidersPage() {
       if (error) throw error;
 
       setIsAddDialogOpen(false);
-      setNewRider({ name: '', phone: '', whatsapp_number: '', branch_id: '' });
-      loadRiders();
+      setNewRider({ name: '', phone: '', whatsapp_number: '', branch_id: '', pin: '' });
+      alert(`Rider added successfully! PIN: ${pin} (Share this with the rider)`);
     } catch (error) {
       console.error('Failed to add rider:', error);
       alert('Failed to add rider. Please try again.');
@@ -302,6 +312,18 @@ export default function RidersPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="rider-pin">PIN (Optional)</Label>
+                <Input
+                  id="rider-pin"
+                  type="password"
+                  maxLength={4}
+                  value={newRider.pin}
+                  onChange={(e) => setNewRider({ ...newRider, pin: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                  placeholder="4 digits (auto-generated if blank)"
+                />
+                <p className="text-xs text-gray-500">Leave blank to auto-generate a random PIN</p>
               </div>
             </div>
             <DialogFooter>
