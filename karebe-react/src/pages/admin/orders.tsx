@@ -406,13 +406,13 @@ function getCallUrl(phone: string): string {
                           </div>
 
                           {/* Rider Info - Show when rider is assigned */}
-                          {order.current_rider_id && (
+                          {(order.rider_id || order.status === 'RIDER_CONFIRMED_DIGITAL' || order.status === 'RIDER_CONFIRMED_MANUAL' || order.status === 'OUT_FOR_DELIVERY') && (
                             <div className="mt-3 p-3 bg-purple-50 rounded-lg border border-purple-100">
                               <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
                                   <Truck className="w-4 h-4 text-purple-600" />
                                   <span className="font-medium text-purple-900 text-sm">
-                                    {order.current_rider_name || 'Rider Assigned'}
+                                    {getRiderById(order.rider_id, riders)?.name || getRiderById(order.rider_id, riders)?.phone || 'Rider Assigned'}
                                   </span>
                                 </div>
                               </div>
