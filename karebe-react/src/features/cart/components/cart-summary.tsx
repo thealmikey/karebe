@@ -7,6 +7,7 @@ import { useCartStore, useCartItemCount } from '../stores/cart-store';
 import { formatPrice } from '@/lib/utils';
 import { CallButton } from '@/features/orders/components/CallButton';
 import { useEffect, useState } from 'react';
+import { useShowPrices } from '@/features/settings/hooks/use-settings';
 
 // Railway API URL for pricing
 const ORCHESTRATION_API = import.meta.env.VITE_ORCHESTRATION_API_URL || 'https://karebe-orchestration-production.up.railway.app';
@@ -43,6 +44,9 @@ export function CartSummary({ onCheckout, compact = false, className = '' }: Car
   const { subtotal, itemCount, items } = useCart();
   const isOpen = useCartStore((state) => state.isOpen);
   const closeCart = useCartStore((state) => state.closeCart);
+  
+  // Check if prices should be shown
+  const showPrices = useShowPrices();
 
   // Fetch pricing config
   const [pricingConfig, setPricingConfig] = useState<PricingConfig>({
@@ -126,32 +130,48 @@ export function CartSummary({ onCheckout, compact = false, className = '' }: Car
 
         {/* Cost breakdown */}
         <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-brand-600">Subtotal</span>
-            <span className="font-medium text-brand-900">{formatPrice(subtotal)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-brand-600">Tax (16%)</span>
-            <span className="font-medium text-brand-900">{formatPrice(tax)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-brand-600 flex items-center gap-1">
-              <Truck className="w-3 h-3" />
-              Delivery
-            </span>
-            <span className="font-medium text-brand-900">
-              {deliveryFee === 0 ? 'FREE' : formatPrice(deliveryFee)}
-            </span>
-          </div>
+          {showPrices ? (
+            <>
+              <div className="flex justify-between text-sm">
+                <span className="text-brand-600">Subtotal</span>
+                <span className="font-medium text-brand-900">{formatPrice(subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-brand-600">Tax (16%)</span>
+                <span className="font-medium text-brand-900">{formatPrice(tax)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-brand-600 flex items-center gap-1">
+                  <Truck className="w-3 h-3" />
+                  Delivery
+                </span>
+                <span className="font-medium text-brand-900">
+                  {deliveryFee === 0 ? 'FREE' : formatPrice(deliveryFee)}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-brand-500 italic">
+              Contact us for pricing
+            </div>
+          )}
         </div>
 
         <Separator />
 
         {/* Total */}
-        <div className="flex justify-between">
-          <span className="text-lg font-semibold text-brand-900">Total</span>
-          <span className="text-2xl font-bold text-brand-900">{formatPrice(total)}</span>
-        </div>
+        {showPrices ? (
+          <div className="flex justify-between">
+            <span className="text-lg font-semibold text-brand-900">Total</span>
+            <span className="text-2xl font-bold text-brand-900">{formatPrice(total)}</span>
+          </div>
+        ) : (
+          <div className="text-center py-2">
+            <span className="text-lg font-semibold text-brand-500 italic">
+              Contact for total
+            </span>
+          </div>
+        )}
 
         {/* Free delivery progress */}
         {freeDeliveryRemaining > 0 && (

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ProductDisplay, ProductVariant } from '../types';
 import { getProductImage, validateImageUrl, normalizeProductImages } from '@/lib/image-utils';
+import { useShowPrices } from '@/features/settings/hooks/use-settings';
 
 interface ProductCardProps {
   product: ProductDisplay;
@@ -45,6 +46,9 @@ export function ProductCard({
   const [imageError, setImageError] = useState(false);
   const [currentImageUrl, setCurrentImageUrl] = useState<string>('');
   const [debugInfo, setDebugInfo] = useState<Record<string, unknown>>({});
+  
+  // Check if prices should be shown
+  const showPrices = useShowPrices();
 
   // Get display price
   const displayPrice = selectedVariant?.price || product.price;
@@ -260,16 +264,22 @@ export function ProductCard({
 
           {/* Price and Action */}
           <div className="flex items-center justify-between">
-            <div className="flex items-baseline gap-2">
-              <span className="text-lg font-semibold text-brand-800">
-                KES {displayPrice.toLocaleString()}
-              </span>
-              {comparePrice && comparePrice > displayPrice && (
-                <span className="text-sm text-brand-400 line-through">
-                  KES {comparePrice.toLocaleString()}
+            {showPrices ? (
+              <div className="flex items-baseline gap-2">
+                <span className="text-lg font-semibold text-brand-800">
+                  KES {displayPrice.toLocaleString()}
                 </span>
-              )}
-            </div>
+                {comparePrice && comparePrice > displayPrice && (
+                  <span className="text-sm text-brand-400 line-through">
+                    KES {comparePrice.toLocaleString()}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span className="text-sm text-brand-500 italic">
+                Contact for pricing
+              </span>
+            )}
 
             {showActions && (
               <div className="flex items-center justify-end">

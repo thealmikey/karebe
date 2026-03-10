@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useCart } from '@/features/cart/hooks/use-cart';
 import { getWhatsAppNumber } from '@/features/settings/hooks/use-settings';
+import { useShowPrices } from '@/features/settings/hooks/use-settings';
 
 interface WhatsAppQuickOrderFabProps {
   position?: 'bottom-right' | 'bottom-left';
@@ -32,6 +33,9 @@ export function WhatsAppQuickOrderFab({
   const isFreeDelivery = subtotal >= pricingConfig.freeDeliveryThreshold;
   const deliveryFee = isFreeDelivery ? 0 : pricingConfig.baseDeliveryFee;
   const total = subtotal + tax + deliveryFee;
+  
+  // Check if prices should be shown
+  const showPrices = useShowPrices();
 
   // Generate pre-filled WhatsApp message with cart contents
   const generateCartMessage = () => {
@@ -129,9 +133,15 @@ export function WhatsAppQuickOrderFab({
                   <p className="font-medium text-green-800">
                     {items.length} item{items.length !== 1 ? 's' : ''} in cart
                   </p>
-                  <p className="text-green-700">
-                    Total: KSh {total.toLocaleString()}
-                  </p>
+                  {showPrices ? (
+                    <p className="text-green-700">
+                      Total: KSh {total.toLocaleString()}
+                    </p>
+                  ) : (
+                    <p className="text-green-700 italic">
+                      Contact for pricing
+                    </p>
+                  )}
                 </div>
               )}
 

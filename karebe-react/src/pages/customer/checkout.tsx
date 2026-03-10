@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { MpesaPaymentSection } from '@/features/checkout/components/mpesa-payment-section';
 import { useCartStore } from '@/features/cart/stores/cart-store';
 import { supabase } from '@/lib/supabase';
+import { useShowPrices } from '@/features/settings/hooks/use-settings';
 
 interface BranchConfig {
   mpesa_payment_type: 'buy_goods' | 'stk_push' | 'both';
@@ -90,6 +91,9 @@ export default function CheckoutPage() {
   const isFreeDelivery = subtotal >= pricingConfig.freeDeliveryThreshold;
   const deliveryFee = isFreeDelivery ? 0 : pricingConfig.baseDeliveryFee;
   const total = subtotal + tax + deliveryFee;
+  
+  // Check if prices should be shown
+  const showPrices = useShowPrices();
 
   const handlePaymentComplete = (mpesaCode: string) => {
     // Submit order with payment confirmation
@@ -174,19 +178,27 @@ export default function CheckoutPage() {
                   </div>
                 ))}
                 <Separator />
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Subtotal</span>
-                  <span>KES {subtotal.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Delivery Fee</span>
-                  <span>KES {deliveryFee.toLocaleString()}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between">
-                  <span className="font-semibold">Total</span>
-                  <span className="font-bold text-lg">KES {total.toLocaleString()}</span>
-                </div>
+                {showPrices ? (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Subtotal</span>
+                      <span>KES {subtotal.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Delivery Fee</span>
+                      <span>KES {deliveryFee.toLocaleString()}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between">
+                      <span className="font-semibold">Total</span>
+                      <span className="font-bold text-lg">KES {total.toLocaleString()}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-2">
+                    <span className="text-gray-500 italic">Contact for pricing</span>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

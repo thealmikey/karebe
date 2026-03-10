@@ -7,6 +7,7 @@ export interface StoreSettings {
   whatsapp_business_number: string;
   delivery_fee: string;
   free_delivery_threshold: string;
+  show_prices: string; // 'true' or 'false' - global price visibility
 }
 
 const defaultSettings: StoreSettings = {
@@ -15,6 +16,7 @@ const defaultSettings: StoreSettings = {
   whatsapp_business_number: '',
   delivery_fee: '300',
   free_delivery_threshold: '5000',
+  show_prices: 'true',
 };
 
 let cachedSettings: StoreSettings = { ...defaultSettings };
@@ -80,6 +82,7 @@ export async function loadSettings(): Promise<StoreSettings> {
       whatsapp_business_number: settingsMap.whatsapp_business_number || defaultSettings.whatsapp_business_number,
       delivery_fee: settingsMap.delivery_fee || defaultSettings.delivery_fee,
       free_delivery_threshold: settingsMap.free_delivery_threshold || defaultSettings.free_delivery_threshold,
+      show_prices: settingsMap.show_prices || defaultSettings.show_prices,
     };
 
     // Notify all listeners
@@ -105,4 +108,19 @@ export function getSupportPhone(): string {
  */
 export function getWhatsAppNumber(): string {
   return cachedSettings.whatsapp_business_number || '254720123456';
+}
+
+/**
+ * Check if prices should be shown globally
+ */
+export function getShowPrices(): boolean {
+  return cachedSettings.show_prices !== 'false';
+}
+
+/**
+ * Hook to check if prices should be shown
+ */
+export function useShowPrices() {
+  const { settings } = useSettings();
+  return settings.show_prices !== 'false';
 }

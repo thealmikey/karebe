@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Phone, MessageCircle, Store, Truck, Save, RefreshCw, Check } from 'lucide-react';
+import { Phone, MessageCircle, Store, Truck, Save, RefreshCw, Check, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import { AuthGuard } from '@/features/auth/components/auth-guard';
 import { supabase } from '@/lib/supabase';
 
@@ -12,6 +13,7 @@ interface BusinessSettings {
   business_name: string;
   support_phone: string;
   whatsapp_business_number: string;
+  show_prices: string;
 }
 
 export default function SettingsPage() {
@@ -19,6 +21,7 @@ export default function SettingsPage() {
     business_name: '',
     support_phone: '',
     whatsapp_business_number: '',
+    show_prices: 'true',
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -49,6 +52,7 @@ export default function SettingsPage() {
         business_name: settingsMap.business_name || 'Karebe Wines & Spirits',
         support_phone: settingsMap.support_phone || '',
         whatsapp_business_number: settingsMap.whatsapp_business_number || '',
+        show_prices: settingsMap.show_prices || 'true',
       });
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -64,6 +68,7 @@ export default function SettingsPage() {
         { key: 'business_name', value: settings.business_name },
         { key: 'support_phone', value: settings.support_phone },
         { key: 'whatsapp_business_number', value: settings.whatsapp_business_number },
+        { key: 'show_prices', value: settings.show_prices },
       ];
 
       for (const { key, value } of settingsToSave) {
@@ -194,6 +199,38 @@ export default function SettingsPage() {
                 <p className="text-xs text-gray-500">
                   WhatsApp number for orders (without + prefix)
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Price Visibility Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Price Display
+              </CardTitle>
+              <CardDescription>
+                Control whether prices are shown to customers
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="show_prices" className="text-base">
+                    Show Prices
+                  </Label>
+                  <p className="text-sm text-gray-500">
+                    When disabled, prices will not be displayed throughout the site
+                  </p>
+                </div>
+                <Switch
+                  id="show_prices"
+                  checked={settings.show_prices === 'true'}
+                  onCheckedChange={(checked) => 
+                    setSettings({ ...settings, show_prices: checked ? 'true' : 'false' })
+                  }
+                />
               </div>
             </CardContent>
           </Card>
