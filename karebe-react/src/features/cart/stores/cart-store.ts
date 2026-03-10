@@ -53,14 +53,14 @@ function generateItemId(productId: string, variantId?: string): string {
 }
 
 // Helper to calculate cart totals
-function calculateTotals(items: CartItem[]) {
+function calculateTotals(items: CartItem[], deliveryFee = 300, freeThreshold = 5000) {
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const tax = subtotal * 0.16; // 16% VAT (Kenya)
-  const deliveryFee = subtotal > 5000 ? 0 : 300; // Free delivery over 5000
-  const total = subtotal + tax + deliveryFee;
+  const deliveryFeeAmount = subtotal > freeThreshold ? 0 : deliveryFee; // Free delivery over threshold
+  const total = subtotal + tax + deliveryFeeAmount;
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   
-  return { subtotal, tax, deliveryFee, total, itemCount };
+  return { subtotal, tax, deliveryFee: deliveryFeeAmount, total, itemCount };
 }
 
 export const useCartStore = create<CartState>()(

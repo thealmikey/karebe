@@ -139,9 +139,12 @@ export function useCart(customerId?: string) {
   }, [customerId, items, store, syncMutation]);
 
   // Clear cart
-  const clearCart = useCallback(() => {
+  const clearCart = useCallback(async () => {
     store.clearCart();
     if (customerId) {
+      // Clear server-side cart for authenticated users
+      const { clearServerCart } = await import('../api/sync-cart');
+      await clearServerCart(customerId);
       queryClient.invalidateQueries({ queryKey: cartKeys.detail(customerId) });
     }
   }, [customerId, queryClient, store]);

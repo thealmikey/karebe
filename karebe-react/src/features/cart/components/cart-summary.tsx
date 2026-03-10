@@ -40,7 +40,7 @@ interface CartSummaryProps {
  * ```
  */
 export function CartSummary({ onCheckout, compact = false, className = '' }: CartSummaryProps) {
-  const { total, subtotal, itemCount, items } = useCart();
+  const { subtotal, itemCount, items } = useCart();
   const isOpen = useCartStore((state) => state.isOpen);
   const closeCart = useCartStore((state) => state.closeCart);
 
@@ -72,6 +72,8 @@ export function CartSummary({ onCheckout, compact = false, className = '' }: Car
   const isFreeDelivery = subtotal >= pricingConfig.freeDeliveryThreshold;
   const deliveryFee = isFreeDelivery ? 0 : pricingConfig.baseDeliveryFee;
   const freeDeliveryRemaining = Math.max(0, pricingConfig.freeDeliveryThreshold - subtotal);
+  // Use recalculated total based on fetched pricing config
+  const total = subtotal + tax + deliveryFee;
 
   if (compact) {
     return (

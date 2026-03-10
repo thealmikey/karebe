@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { AuthGuard } from '@/features/auth/components/auth-guard';
 import { supabase } from '@/lib/supabase';
@@ -30,6 +29,10 @@ export default function SettingsPage() {
   }, []);
 
   const loadSettings = async () => {
+    if (!supabase) {
+      setIsLoading(false);
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('admin_settings')
@@ -38,7 +41,7 @@ export default function SettingsPage() {
       if (error) throw error;
 
       const settingsMap: Record<string, string> = {};
-      data?.forEach((row) => {
+      data?.forEach((row: { setting_key: string; setting_value: string | null }) => {
         settingsMap[row.setting_key] = row.setting_value || '';
       });
 
@@ -64,12 +67,12 @@ export default function SettingsPage() {
       ];
 
       for (const { key, value } of settingsToSave) {
-        const { error } = await supabase
-          .from('admin_settings')
-          .upsert(
-            { setting_key: key, setting_value: value, updated_at: new Date().toISOString() },
-            { onConflict: 'setting_key' }
-          );
+        if (!supabase) continue;
+        const from = supabase.from('admin_settings') as any;
+        const { error } = await from.upsert(
+          { setting_key: key, setting_value: value, updated_at: new Date().toISOString() } as any,
+          { onConflict: 'setting_key' }
+        );
 
         if (error) throw error;
       }
@@ -86,7 +89,7 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <AuthGuard requireAdmin>
+      <AuthGuard requiredRole="admin">
         <div className="flex items-center justify-center min-h-screen">
           <RefreshCw className="h-8 w-8 animate-spin text-brand-600" />
         </div>
@@ -95,7 +98,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <AuthGuard requireAdmin>
+    <AuthGuard requiredRole="admin">
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <header className="bg-white border-b sticky top-0 z-10">
