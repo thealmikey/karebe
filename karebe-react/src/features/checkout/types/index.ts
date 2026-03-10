@@ -37,14 +37,19 @@ export interface CheckoutSummary {
 
 export interface CreateOrderInput {
   customerProfileId?: string;
+  customerName?: string;
+  phone?: string;
   items: Array<{
     productId: string;
+    productName?: string;
     variantId?: string;
     quantity: number;
     unitPrice: number;
   }>;
   deliveryMethod: DeliveryMethod;
   deliveryAddress?: Address;
+  deliveryZoneId?: string;
+  distanceKm?: number;
   branchId?: string;
   paymentMethod: PaymentMethod;
   subtotal: number;

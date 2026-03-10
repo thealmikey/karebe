@@ -80,7 +80,7 @@ router.post('/daraja/stkpush', async (req: Request, res: Response) => {
       throw new Error('Failed to get M-Pesa access token');
     }
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = await tokenResponse.json() as { access_token: string };
     const accessToken = tokenData.access_token;
 
     // Prepare STK Push request
@@ -108,7 +108,11 @@ router.post('/daraja/stkpush', async (req: Request, res: Response) => {
       }),
     });
 
-    const stkData = await stkResponse.json();
+    const stkData = await stkResponse.json() as {
+      ResponseCode?: string;
+      CheckoutRequestID?: string;
+      ResponseDescription?: string;
+    };
 
     if (stkData.ResponseCode === '0') {
       // Create payment record

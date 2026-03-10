@@ -2,9 +2,18 @@ import { useState, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { createOrder, initiateMpesaPayment, checkPaymentStatus } from '../api/create-order';
 import type { CreateOrderInput, CheckoutFormData } from '../types';
+import { useCartStore } from '@/features/cart';
+import type { CartItem as CartItemType } from '@/features/cart/types';
 
 export function useCheckout() {
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'completed' | 'failed'>('idle');
+  
+  // Get cart values from store
+  const items = useCartStore((state) => state.items);
+  const subtotal = useCartStore((state) => state.subtotal);
+  const total = useCartStore((state) => state.total);
+  const tax = useCartStore((state) => state.tax);
+  const deliveryFee = useCartStore((state) => state.deliveryFee);
 
   const orderMutation = useMutation({
     mutationFn: createOrder,
@@ -12,25 +21,41 @@ export function useCheckout() {
 
   const processCheckout = useCallback(async (
     formData: CheckoutFormData,
-    cartItems: Array<{
+    _cartItems: Array<{
       productId: string;
       variantId?: string;
       quantity: number;
       unitPrice: number;
     }>,
-    customerProfileId?: string
+    customerProfileId?: string,
+    deliveryZoneId?: string,
+    distanceKm?: number
   ) => {
+    // Use actual cart values instead of hardcoded 0
     const orderInput: CreateOrderInput = {
       customerProfileId,
-      items: cartItems,
+      customerName: formData.firstName && formData.lastName 
+        ? `${formData.firstName} ${formData.lastName}` 
+        : undefined,
+      phone: formData.phone,
+      items: items.map((item: CartItemType) => ({
+        productId: item.productId,
+        productName: item.product?.name,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      })),
       deliveryMethod: formData.deliveryMethod,
       deliveryAddress: formData.deliveryMethod === 'delivery' ? formData.address : undefined,
+      deliveryZoneId,
+      distanceKm,
       branchId: formData.deliveryMethod === 'pickup' ? formData.branchId : undefined,
       paymentMethod: formData.paymentMethod,
-      subtotal: 0, // Calculate from cart
-      tax: 0,
-      deliveryFee: 0,
-      total: 0,
+      // Use actual cart values
+      subtotal,
+      tax,
+      deliveryFee,
+      total,
       notes: formData.notes,
     };
 
@@ -57,7 +82,7 @@ export function useCheckout() {
     }
 
     return result;
-  }, [orderMutation]);
+  }, [orderMutation, items, subtotal, total, tax, deliveryFee]);
 
   const pollPaymentStatus = async (
     orderId: string,

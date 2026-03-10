@@ -6,32 +6,45 @@ const ORCHESTRATION_API = import.meta.env.VITE_ORCHESTRATION_API_URL || 'https:/
 
 export async function createOrder(input: CreateOrderInput): Promise<CreateOrderResponse> {
   try {
-    // Call the checkout edge function
-    const { data, error } = await supabase.functions.invoke('checkout', {
-      body: {
-        items: input.items,
-        customer_profile_id: input.customerProfileId,
-        delivery_method: input.deliveryMethod,
-        delivery_address: input.deliveryAddress,
-        branch_id: input.branchId,
-        payment_method: input.paymentMethod,
-        subtotal: input.subtotal,
-        tax: input.tax,
-        delivery_fee: input.deliveryFee,
-        total: input.total,
-        notes: input.notes,
-      },
+    // Call the Railway orchestration API
+    const response = await fetch(`${ORCHESTRATION_API}/api/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customer_phone: input.phone || input.customerPhone || '',
+        customer_name: input.customerName || null,
+        delivery_address: input.deliveryAddress?.street || '',
+        delivery_notes: input.notes || null,
+        branch_id: input.branchId || null,
+        // Pass delivery and pricing info
+        delivery_fee: input.deliveryFee || 0,
+        delivery_zone_id: input.deliveryZoneId || null,
+        distance_km: input.distanceKm || null,
+        tax: input.tax || 0,
+        total: input.total || 0,
+        // Items
+        items: input.items.map(item => ({
+          product_id: item.productId,
+          product_name: item.productName || '',
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          variant: item.variantId || null,
+        })),
+        trigger_source: 'cart_checkout',
+      }),
     });
 
-    if (error) {
-      throw new Error(error.message);
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || data.error || 'Failed to create order');
     }
 
     return {
       success: true,
-      orderId: data.order_id,
-      orderNumber: data.order_number,
-      paymentReference: data.payment_reference,
+      orderId: data.data?.id,
+      orderNumber: data.data?.order_number,
+      paymentReference: data.data?.payment_reference,
       requiresPayment: data.requires_payment,
       paymentUrl: data.payment_url,
     };

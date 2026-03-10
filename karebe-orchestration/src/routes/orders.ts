@@ -24,6 +24,13 @@ const createOrderSchema = z.object({
   delivery_address: z.string().min(5),
   delivery_notes: z.string().optional(),
   branch_id: z.string().uuid(),
+  // Delivery and pricing
+  delivery_fee: z.number().optional().default(0),
+  delivery_zone_id: z.string().uuid().optional(),
+  distance_km: z.number().optional(),
+  tax: z.number().optional().default(0),
+  total: z.number().optional().default(0),
+  // Items
   items: z.array(z.object({
     product_id: z.string().uuid(),
     product_name: z.string(),

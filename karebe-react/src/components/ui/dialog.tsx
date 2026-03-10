@@ -48,6 +48,7 @@ export interface DialogProps {
 export function Dialog({
   open,
   onClose,
+  onOpenChange,
   title,
   description,
   children,
@@ -58,19 +59,28 @@ export function Dialog({
 }: DialogProps) {
   const dialogRef = React.useRef<HTMLDivElement>(null);
 
+  // Handle close - prefer onClose, fallback to onOpenChange
+  const handleClose = React.useCallback(() => {
+    if (onClose) {
+      onClose();
+    } else if (onOpenChange) {
+      onOpenChange(false);
+    }
+  }, [onClose, onOpenChange]);
+
   // Handle escape key
   React.useEffect(() => {
     if (!open || !closeOnEscape) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose?.();
+        handleClose();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [open, closeOnEscape, onClose]);
+  }, [open, closeOnEscape, handleClose]);
 
   // Prevent body scroll when dialog is open
   React.useEffect(() => {
@@ -132,7 +142,7 @@ export function Dialog({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity animate-fade-in"
-        onClick={closeOnOverlayClick ? () => onClose?.() : undefined}
+        onClick={closeOnOverlayClick ? () => handleClose() : undefined}
         aria-hidden="true"
       />
 
@@ -160,7 +170,7 @@ export function Dialog({
             </div>
             {!hideCloseButton && (
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="rounded-lg p-1.5 text-brand-400 hover:text-brand-600 hover:bg-brand-100 transition-colors"
                 aria-label="Close dialog"
               >
