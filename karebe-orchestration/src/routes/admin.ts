@@ -620,7 +620,7 @@ router.get('/riders', async (_req: Request, res: Response) => {
     const { data, error } = await supabase
       .from('riders')
       .select('*')
-      .order('name', { ascending: true });
+      .order('full_name', { ascending: true });
 
     if (error) throw error;
 
@@ -658,7 +658,7 @@ router.post('/riders', async (req: Request, res: Response) => {
     const { data, error } = await supabase
       .from('riders')
       .insert({
-        name: full_name || name || phone,
+        full_name: full_name || name || phone,
         phone,
         whatsapp_number: whatsapp_number || phone,
         branch_id: branch_id || null,
@@ -709,7 +709,7 @@ router.put('/riders', async (req: Request, res: Response) => {
     }
 
     const updateData: Record<string, unknown> = {
-      name: full_name || name,
+      full_name: full_name || name,
       phone,
       whatsapp_number: whatsapp_number,
       branch_id: branch_id || null,
