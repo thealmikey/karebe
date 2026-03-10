@@ -9,6 +9,9 @@ import { Label } from '@/components/ui/label';
 import { AuthGuard } from '@/features/auth/components/auth-guard';
 import { supabase } from '@/lib/supabase';
 
+// Railway API URL - use environment variable with fallback
+const ORCHESTRATION_API = import.meta.env.VITE_ORCHESTRATION_API_URL || 'https://karebe-orchestration-production.up.railway.app';
+
 // Extended Rider interface with status field needed by UI
 interface RiderWithStatus {
   id: string;
@@ -55,8 +58,8 @@ export default function RidersPage() {
 
   const loadBranches = async () => {
     try {
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/branches');
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/branches`);
       const result = await response.json();
       
       if (result.ok && result.data) {
@@ -69,8 +72,8 @@ export default function RidersPage() {
 
   const loadRiders = async () => {
     try {
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/riders');
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/riders`);
       const result = await response.json();
       
       if (!result.ok) {
@@ -92,8 +95,8 @@ export default function RidersPage() {
 
   const handleAddRider = async () => {
     try {
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/riders', {
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/riders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -124,8 +127,8 @@ export default function RidersPage() {
 
   const handleToggleStatus = async (rider: RiderWithStatus) => {
     try {
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/riders', {
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/riders`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: rider.id, is_active: !rider.is_active }),
@@ -145,8 +148,8 @@ export default function RidersPage() {
     if (!confirm('Are you sure you want to delete this rider?')) return;
 
     try {
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/riders', {
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/riders`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: riderId }),
@@ -257,7 +260,7 @@ export default function RidersPage() {
                           {rider.phone}
                         </CardDescription>
                       </div>
-                      {getStatusBadge(rider.status)}
+                      {getStatusBadge(rider.status || 'OFFLINE')}
                     </div>
                   </CardHeader>
                   <CardContent>

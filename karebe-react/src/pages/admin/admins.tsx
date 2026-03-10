@@ -11,6 +11,9 @@ import { AuthGuard } from '@/features/auth/components/auth-guard';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { supabase } from '@/lib/supabase';
 
+// Railway API URL - use environment variable with fallback
+const ORCHESTRATION_API = import.meta.env.VITE_ORCHESTRATION_API_URL || 'https://karebe-orchestration-production.up.railway.app';
+
 interface AdminUser {
   id: string;
   email: string;
@@ -53,8 +56,8 @@ export default function AdminsPage() {
   const loadAdmins = async () => {
     try {
       setIsLoading(true);
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/admins', {
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/admins`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -101,8 +104,8 @@ export default function AdminsPage() {
 
   const handleAddAdmin = async () => {
     try {
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/admins', {
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/admins`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,8 +144,8 @@ export default function AdminsPage() {
     if (!editingAdmin) return;
     
     try {
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/admins', {
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/admins`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -172,8 +175,8 @@ export default function AdminsPage() {
 
   const handleToggleActive = async (admin: AdminUser) => {
     try {
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/admins', {
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/admins`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -199,8 +202,8 @@ export default function AdminsPage() {
   const handleDeleteAdmin = async (adminId: string) => {
     if (!confirm('Are you sure you want to delete this admin?')) return;
     try {
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/admins', {
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/admins`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

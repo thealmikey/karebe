@@ -11,6 +11,9 @@ import { Separator } from '@/components/ui/separator';
 import { AuthGuard } from '@/features/auth/components/auth-guard';
 import { supabase } from '@/lib/supabase';
 
+// Railway API URL - use environment variable with fallback
+const ORCHESTRATION_API = import.meta.env.VITE_ORCHESTRATION_API_URL || 'https://karebe-orchestration-production.up.railway.app';
+
 interface Branch {
   id: string;
   name: string;
@@ -44,8 +47,8 @@ export default function BranchConfigPage() {
   const loadBranches = async () => {
     try {
       setIsLoading(true);
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/branches');
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/branches`);
       const result = await response.json();
       
       if (!result.ok) {
@@ -70,8 +73,8 @@ export default function BranchConfigPage() {
 
   const handleAddBranch = async () => {
     try {
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/branches', {
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/branches`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -103,8 +106,8 @@ export default function BranchConfigPage() {
     if (!editingBranch) return;
     
     try {
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/branches', {
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/branches`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -136,19 +139,19 @@ export default function BranchConfigPage() {
 
   const handleSetMain = async (branchId: string) => {
     try {
-      // Use server-side API to bypass RLS
-      await fetch('/api/admin/branches', {
+      // Use Railway orchestration API
+      await fetch(`${ORCHESTRATION_API}/api/admin/branches`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: branchId, is_main: true }),
       });
       // Reset other branches' is_main to false
-      const response = await fetch('/api/admin/branches');
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/branches`);
       const result = await response.json();
       if (result.ok && result.data) {
         for (const branch of result.data) {
           if (branch.id !== branchId && branch.is_main) {
-            await fetch('/api/admin/branches', {
+            await fetch(`${ORCHESTRATION_API}/api/admin/branches`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ id: branch.id, is_main: false }),
@@ -165,8 +168,8 @@ export default function BranchConfigPage() {
   const handleDeleteBranch = async (branchId: string) => {
     if (!confirm('Are you sure you want to delete this branch?')) return;
     try {
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/branches', {
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/branches`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: branchId }),
@@ -184,8 +187,8 @@ export default function BranchConfigPage() {
 
   const handleToggleActive = async (branch: Branch) => {
     try {
-      // Use server-side API to bypass RLS
-      const response = await fetch('/api/admin/branches', {
+      // Use Railway orchestration API
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/branches`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: branch.id, is_active: !branch.is_active }),
