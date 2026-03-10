@@ -124,3 +124,19 @@ export function useShowPrices() {
   const { settings } = useSettings();
   return settings.show_prices !== 'false';
 }
+
+/**
+ * Get delivery fee from settings
+ */
+export function getDeliveryFee(): number {
+  const fee = parseInt(cachedSettings.delivery_fee || '300', 10);
+  return isNaN(fee) ? 300 : fee;
+}
+
+/**
+ * Get free delivery threshold from settings
+ */
+export function getFreeDeliveryThreshold(): number {
+  const threshold = parseInt(cachedSettings.free_delivery_threshold || '5000', 10);
+  return isNaN(threshold) ? 5000 : threshold;
+}

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Cart, CartItem } from '../types';
+import { getDeliveryFee, getFreeDeliveryThreshold } from '@/features/settings/hooks/use-settings';
 
 interface CartState extends Cart {
   // UI state
@@ -52,11 +53,14 @@ function generateItemId(productId: string, variantId?: string): string {
   return variantId ? `${productId}:${variantId}` : productId;
 }
 
-// Helper to calculate cart totals
-function calculateTotals(items: CartItem[], deliveryFee = 300, freeThreshold = 5000) {
+// Helper to calculate cart totals - uses settings for delivery fee and threshold
+function calculateTotals(items: CartItem[], deliveryFee?: number, freeThreshold?: number) {
+  const fee = deliveryFee ?? getDeliveryFee();
+  const threshold = freeThreshold ?? getFreeDeliveryThreshold();
+  
   const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const tax = subtotal * 0.16; // 16% VAT (Kenya)
-  const deliveryFeeAmount = subtotal > freeThreshold ? 0 : deliveryFee; // Free delivery over threshold
+  const deliveryFeeAmount = subtotal > threshold ? 0 : fee; // Free delivery over threshold
   const total = subtotal + tax + deliveryFeeAmount;
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   
