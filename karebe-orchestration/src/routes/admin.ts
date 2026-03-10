@@ -429,4 +429,355 @@ router.get('/webhook-events', async (req: Request, res: Response) => {
   }
 });
 
+// =============================================================================
+// Branches Management
+// =============================================================================
+
+/**
+ * GET /api/admin/branches
+ * Get all branches
+ */
+router.get('/branches', async (_req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('branches')
+      .select('*')
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    logger.error('Error fetching branches', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch branches',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/branches
+ * Create a new branch
+ */
+router.post('/branches', async (req: Request, res: Response) => {
+  try {
+    const { name, address, phone, is_main, is_active, mpesa_shortcode, mpesa_payment_type } = req.body;
+
+    if (!name) {
+      return res.status(400).json({
+        success: false,
+        error: 'Branch name is required',
+      });
+    }
+
+    // If this branch is main, unset other main branches
+    if (is_main) {
+      await supabase
+        .from('branches')
+        .update({ is_main: false })
+        .eq('is_main', true);
+    }
+
+    const { data, error } = await supabase
+      .from('branches')
+      .insert({
+        name,
+        address,
+        phone,
+        is_main: is_main || false,
+        is_active: is_active !== false,
+        mpesa_shortcode,
+        mpesa_payment_type,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    logger.error('Error creating branch', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create branch',
+    });
+  }
+});
+
+/**
+ * PUT /api/admin/branches
+ * Update a branch (or set as main)
+ */
+router.put('/branches', async (req: Request, res: Response) => {
+  try {
+    const { id, name, address, phone, is_main, is_active, mpesa_shortcode, mpesa_payment_type } = req.body;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Branch ID is required',
+      });
+    }
+
+    // If setting as main, unset other main branches first
+    if (is_main) {
+      await supabase
+        .from('branches')
+        .update({ is_main: false })
+        .eq('is_main', true)
+        .neq('id', id);
+    }
+
+    const updateData: Record<string, unknown> = {
+      name,
+      address,
+      phone,
+      is_main: is_main || false,
+      is_active: is_active !== false,
+      mpesa_shortcode,
+      mpesa_payment_type,
+    };
+
+    // Remove undefined values
+    Object.keys(updateData).forEach((key) => {
+      if (updateData[key] === undefined) delete updateData[key];
+    });
+
+    const { data, error } = await supabase
+      .from('branches')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    logger.error('Error updating branch', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update branch',
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/branches
+ * Delete a branch
+ */
+router.delete('/branches', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.body;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Branch ID is required',
+      });
+    }
+
+    const { error } = await supabase
+      .from('branches')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      message: 'Branch deleted successfully',
+    });
+  } catch (error) {
+    logger.error('Error deleting branch', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete branch',
+    });
+  }
+});
+
+// =============================================================================
+// Riders Management (Admin)
+// =============================================================================
+
+/**
+ * GET /api/admin/riders
+ * Get all riders (admin view)
+ */
+router.get('/riders', async (_req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('riders')
+      .select('*')
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    logger.error('Error fetching riders', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch riders',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/riders
+ * Create a new rider
+ */
+router.post('/riders', async (req: Request, res: Response) => {
+  try {
+    const { full_name, name, phone, whatsapp_number, branch_id, pin, is_active } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        error: 'Phone number is required',
+      });
+    }
+
+    // Generate a random PIN if not provided
+    const riderPin = pin || Math.floor(1000 + Math.random() * 9000).toString();
+
+    const { data, error } = await supabase
+      .from('riders')
+      .insert({
+        name: full_name || name || phone,
+        phone,
+        whatsapp_number: whatsapp_number || phone,
+        branch_id: branch_id || null,
+        pin: riderPin,
+        is_active: is_active !== false,
+        status: 'AVAILABLE',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === '23505') {
+        return res.status(400).json({
+          success: false,
+          error: 'A rider with this phone number already exists',
+        });
+      }
+      throw error;
+    }
+
+    res.status(201).json({
+      success: true,
+      data,
+      pin: riderPin,
+    });
+  } catch (error) {
+    logger.error('Error creating rider', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create rider',
+    });
+  }
+});
+
+/**
+ * PUT /api/admin/riders
+ * Update a rider (toggle active status or update details)
+ */
+router.put('/riders', async (req: Request, res: Response) => {
+  try {
+    const { id, full_name, name, phone, whatsapp_number, branch_id, is_active, pin } = req.body;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Rider ID is required',
+      });
+    }
+
+    const updateData: Record<string, unknown> = {
+      name: full_name || name,
+      phone,
+      whatsapp_number: whatsapp_number,
+      branch_id: branch_id || null,
+      is_active: is_active,
+      pin,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Remove undefined values
+    Object.keys(updateData).forEach((key) => {
+      if (updateData[key] === undefined) delete updateData[key];
+    });
+
+    const { data, error } = await supabase
+      .from('riders')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    logger.error('Error updating rider', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update rider',
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/riders
+ * Delete a rider
+ */
+router.delete('/riders', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.body;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Rider ID is required',
+      });
+    }
+
+    const { error } = await supabase
+      .from('riders')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      message: 'Rider deleted successfully',
+    });
+  } catch (error) {
+    logger.error('Error deleting rider', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete rider',
+    });
+  }
+});
+
 export default router;

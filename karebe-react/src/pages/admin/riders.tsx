@@ -59,7 +59,7 @@ export default function RidersPage() {
   const loadBranches = async () => {
     try {
       // Use Railway orchestration API
-      const response = await fetch(`${ORCHESTRATION_API}/api/admin/branches`);
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/riders`);
       const result = await response.json();
       
       if (result.ok && result.data) {
