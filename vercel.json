@@ -20,55 +20,55 @@
   "rewrites": [
     {
       "source": "/cart",
-      "destination": "/karebe-react/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/checkout",
-      "destination": "/karebe-react/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/admin/login",
-      "destination": "/karebe-react/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/admin",
-      "destination": "/karebe-react/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/admin/orders",
-      "destination": "/karebe-react/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/admin/products",
-      "destination": "/karebe-react/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/admin/branches",
-      "destination": "/karebe-react/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/admin/settings",
-      "destination": "/karebe-react/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/admin/riders",
-      "destination": "/karebe-react/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/admin/admins",
-      "destination": "/karebe-react/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/admin/:path*",
-      "destination": "/karebe-react/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/rider/:path*",
-      "destination": "/karebe-react/dist/index.html"
+      "destination": "/index.html"
     },
     {
       "source": "/:path*",
-      "destination": "/karebe-react/dist/index.html"
+      "destination": "/index.html"
     }
   ]
 }
