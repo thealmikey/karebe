@@ -485,35 +485,17 @@ export default function AdminProductsPage() {
         imageUrl: editingProduct.image_url,
       });
       
-      // Get admin user from session storage for API auth
-      const adminUser = sessionStorage.getItem('karebe_admin_user');
-      
-      // Use API endpoint to update product (bypasses RLS)
-      const response = await fetch('/api/products', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-karebe-admin-user': adminUser || 'admin',
-        },
-        body: JSON.stringify({
-          id: editingProduct.id,
-          name: editingProduct.name,
-          description: editingProduct.description || null,
-          category: (editingProduct as any).category_name || editingProduct.category_id || 'Spirits',
-          image: editingProduct.image_url || editingProduct.image || null,
-          price: editingProduct.price,
-          stock_quantity: editingProduct.stock_quantity,
-          unit_size: editingProduct.unit_size || null,
-          is_featured: editingProduct.is_featured || false,
-          is_available: editingProduct.is_available !== false,
-          is_visible: editingProduct.is_visible !== false,
-        }),
+      // Use ProductManager to update the product
+      await ProductManager.updateProduct(editingProduct.id, {
+        name: editingProduct.name,
+        description: editingProduct.description || undefined,
+        price: editingProduct.price,
+        category: (editingProduct as any).category_name || editingProduct.category || 'Spirits',
+        image_url: editingProduct.image_url || editingProduct.image || undefined,
+        stock_quantity: editingProduct.stock_quantity,
+        unit_size: editingProduct.unit_size || undefined,
+        is_featured: editingProduct.is_featured || false,
       });
-      
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to update product');
-      }
       
       console.log('[Admin Products] Product updated successfully');
       setIsEditDialogOpen(false);

@@ -152,12 +152,13 @@ export function Dialog({
         className={cn(
           'relative z-10 w-full mx-4 rounded-2xl bg-white shadow-elevated',
           'transform transition-all animate-slide-up',
+          'max-h-[90vh] flex flex-col',
           sizeClasses[size]
         )}
       >
         {/* Header */}
         {(title || !hideCloseButton) && (
-          <div className="flex items-start justify-between p-6 pb-0">
+          <div className="flex items-start justify-between p-6 pb-0 shrink-0">
             <div className="flex-1 pr-4">
               {title && (
                 <h2 className="text-lg font-display font-semibold text-brand-950">
@@ -180,8 +181,12 @@ export function Dialog({
           </div>
         )}
 
-        {/* Content */}
-        <div className={cn('p-6', !title && 'pt-6')}>{children}</div>
+        {/* Content - scrollable area with footer fixed at bottom */}
+        <div className={cn('flex-1 overflow-y-auto', !title && 'pt-6')}>
+          <div className="p-6">
+            {children}
+          </div>
+        </div>
       </div>
     </div>
   );
