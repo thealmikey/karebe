@@ -63,9 +63,33 @@ export default function CheckoutPage() {
     fetchPaymentConfig();
   }, []);
 
-  const subtotal = getTotal();
-  const deliveryFee = 200;
-  const total = subtotal + deliveryFee;
+  // Fetch pricing config for delivery fee calculation
+  const [pricingConfig, setPricingConfig] = useState({
+    baseDeliveryFee: 300,
+    freeDeliveryThreshold: 5000,
+  });
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_ORCHESTRATION_API_URL || 'https://karebe-orchestration-production.up.railway.app'}/api/pricing`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.ok && data.data?.settings) {
+          const settings = data.data.settings;
+          setPricingConfig({
+            baseDeliveryFee: settings.base_delivery_fee?.amount ?? 300,
+            freeDeliveryThreshold: settings.free_delivery_threshold?.amount ?? 5000,
+          });
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  // Calculate totals using configurable pricing
+  const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const tax = subtotal * 0.16; // 16% VAT
+  const isFreeDelivery = subtotal >= pricingConfig.freeDeliveryThreshold;
+  const deliveryFee = isFreeDelivery ? 0 : pricingConfig.baseDeliveryFee;
+  const total = subtotal + tax + deliveryFee;
 
   const handlePaymentComplete = (mpesaCode: string) => {
     // Submit order with payment confirmation
