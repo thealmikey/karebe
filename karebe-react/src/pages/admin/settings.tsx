@@ -13,8 +13,6 @@ interface BusinessSettings {
   business_name: string;
   support_phone: string;
   whatsapp_business_number: string;
-  delivery_fee: string;
-  free_delivery_threshold: string;
 }
 
 export default function SettingsPage() {
@@ -22,8 +20,6 @@ export default function SettingsPage() {
     business_name: '',
     support_phone: '',
     whatsapp_business_number: '',
-    delivery_fee: '300',
-    free_delivery_threshold: '5000',
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -50,8 +46,6 @@ export default function SettingsPage() {
         business_name: settingsMap.business_name || 'Karebe Wines & Spirits',
         support_phone: settingsMap.support_phone || '',
         whatsapp_business_number: settingsMap.whatsapp_business_number || '',
-        delivery_fee: settingsMap.delivery_fee || '300',
-        free_delivery_threshold: settingsMap.free_delivery_threshold || '5000',
       });
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -67,8 +61,6 @@ export default function SettingsPage() {
         { key: 'business_name', value: settings.business_name },
         { key: 'support_phone', value: settings.support_phone },
         { key: 'whatsapp_business_number', value: settings.whatsapp_business_number },
-        { key: 'delivery_fee', value: settings.delivery_fee },
-        { key: 'free_delivery_threshold', value: settings.free_delivery_threshold },
       ];
 
       for (const { key, value } of settingsToSave) {
@@ -198,45 +190,6 @@ export default function SettingsPage() {
                 />
                 <p className="text-xs text-gray-500">
                   WhatsApp number for orders (without + prefix)
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Delivery Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Truck className="h-5 w-5" />
-                Delivery Settings
-              </CardTitle>
-              <CardDescription>
-                Configure delivery fees and thresholds
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="delivery_fee">Delivery Fee (KES)</Label>
-                <Input
-                  id="delivery_fee"
-                  type="number"
-                  value={settings.delivery_fee}
-                  onChange={(e) => setSettings({ ...settings, delivery_fee: e.target.value })}
-                  placeholder="300"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="free_delivery_threshold">Free Delivery Minimum (KES)</Label>
-                <Input
-                  id="free_delivery_threshold"
-                  type="number"
-                  value={settings.free_delivery_threshold}
-                  onChange={(e) => setSettings({ ...settings, free_delivery_threshold: e.target.value })}
-                  placeholder="5000"
-                />
-                <p className="text-xs text-gray-500">
-                  Orders above this amount get free delivery
                 </p>
               </div>
             </CardContent>
