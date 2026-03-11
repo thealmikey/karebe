@@ -139,23 +139,31 @@ router.get('/:id', async (req: Request, res: Response) => {
 
 /**
  * GET /api/orders
- * Get orders by status
+ * Get orders by status (optional - returns all orders if no status specified)
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
     const { status, branch_id } = req.query;
     
-    if (!status || !Object.values(OrderStatus).includes(status as OrderStatus)) {
+    // If status is provided, validate it
+    if (status && !Object.values(OrderStatus).includes(status as OrderStatus)) {
       return res.status(400).json({
         success: false,
         error: 'Valid status query parameter required',
       });
     }
 
-    const orders = await orderService.getOrdersByStatus(
-      status as OrderStatus,
-      branch_id as string | undefined
-    );
+    let orders;
+    if (status) {
+      // Filter by status if provided
+      orders = await orderService.getOrdersByStatus(
+        status as OrderStatus,
+        branch_id as string | undefined
+      );
+    } else {
+      // Return all orders when no status is specified
+      orders = await orderService.getAllOrders(branch_id as string | undefined);
+    }
 
     res.json({
       success: true,

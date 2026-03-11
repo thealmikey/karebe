@@ -519,6 +519,29 @@ export class OrderService {
   }
 
   /**
+   * Get all orders (without status filter)
+   */
+  async getAllOrders(branchId?: string): Promise<Order[]> {
+    let query = supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (branchId) {
+      query = query.eq('branch_id', branchId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      logger.error('Failed to get all orders', { error, branchId });
+      throw new Error(`Failed to get orders: ${error.message} (${error.code})`);
+    }
+
+    return data as Order[];
+  }
+
+  /**
    * Get order audit trail
    */
   async getOrderHistory(orderId: string): Promise<StateTransition[]> {
