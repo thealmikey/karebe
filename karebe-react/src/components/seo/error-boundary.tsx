@@ -1,6 +1,7 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home, Loader2 } from 'lucide-react';
+import { getErrorDisplay, type ErrorDisplay } from '@/lib/error-handler';
 
 interface Props {
   children: ReactNode;
@@ -11,6 +12,9 @@ interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+  isRetrying: boolean;
+  retryCount: number;
+  errorDisplay: ErrorDisplay | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -20,22 +24,31 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
+      isRetrying: false,
+      retryCount: 0,
+      errorDisplay: null,
     };
   }
 
   static getDerivedStateFromError(error: Error): State {
+    const errorDisplay = getErrorDisplay(error);
     return {
       hasError: true,
       error,
       errorInfo: null,
+      isRetrying: false,
+      retryCount: 0,
+      errorDisplay,
     };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    const errorDisplay = getErrorDisplay(error);
     this.setState({
       error,
       errorInfo,
+      errorDisplay,
     });
   }
 
@@ -44,7 +57,33 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
+      isRetrying: false,
+      retryCount: 0,
+      errorDisplay: null,
     });
+  };
+
+  handleRetry = async (): Promise<void> => {
+    const { retryCount, error } = this.state;
+    const maxRetries = 3;
+    
+    if (retryCount >= maxRetries || !error) {
+      return;
+    }
+    
+    this.setState({ isRetrying: true });
+    
+    // Simulate a delay before retry
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    this.setState(prevState => ({
+      isRetrying: false,
+      retryCount: prevState.retryCount + 1,
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      errorDisplay: null,
+    }));
   };
 
   handleGoHome = (): void => {
@@ -67,11 +106,11 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
             
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Something went wrong
+              {this.state.errorDisplay?.title || 'Something went wrong'}
             </h1>
             
             <p className="text-gray-600 mb-6">
-              We apologize for the inconvenience. Please try again or contact support if the problem persists.
+              {this.state.errorDisplay?.message || 'We apologize for the inconvenience. Please try again or contact support if the problem persists.'}
             </p>
 
             {this.state.error && (
@@ -82,13 +121,29 @@ export class ErrorBoundary extends Component<Props, State> {
               </div>
             )}
 
-            <div className="flex gap-3 justify-center">
+            <div className="flex gap-3 justify-center flex-wrap">
+              {this.state.errorDisplay?.retryable && this.state.retryCount < 3 && (
+                <Button
+                  onClick={this.handleRetry}
+                  disabled={this.state.isRetrying}
+                  className="flex items-center gap-2"
+                >
+                  {this.state.isRetrying ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  {this.state.isRetrying ? 'Retrying...' : `Try Again (${this.state.retryCount}/3)`}
+                </Button>
+              )}
+              
               <Button
                 onClick={this.handleReset}
+                variant="outline"
                 className="flex items-center gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
-                Try Again
+                Reset
               </Button>
               
               <Button
