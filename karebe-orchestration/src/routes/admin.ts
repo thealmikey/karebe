@@ -223,14 +223,25 @@ router.put('/admins/:id', async (req: Request, res: Response) => {
 router.delete('/admins/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    
+    logger.info('DELETE admin request received', { 
+      adminId: id, 
+      params: req.params,
+      path: req.path,
+      originalUrl: req.originalUrl 
+    });
 
     const { error } = await supabase
       .from('admin_users')
       .delete()
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      logger.error('Supabase delete error', { error, adminId: id });
+      throw error;
+    }
 
+    logger.info('Admin deleted successfully', { adminId: id });
     res.json({
       success: true,
       message: 'Admin user deleted successfully',

@@ -98,6 +98,52 @@ export function ProductCard({
     loadImage();
   }, [product]);
 
+  // Add JSON-LD structured data for SEO
+  useEffect(() => {
+    if (!product) return;
+    
+    const productSchema = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": product.name,
+      "description": product.description || '',
+      "image": product.images[0] ? [product.images[0]] : [],
+      "sku": product.id,
+      "brand": {
+        "@type": "Brand",
+        "name": "Karebe Wines & Spirits"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": displayPrice,
+        "priceCurrency": "KES",
+        "availability": isOutOfStock 
+          ? "https://schema.org/OutOfStock" 
+          : "https://schema.org/InStock",
+        "seller": {
+          "@type": "Organization",
+          "name": "Karebe Wines & Spirits"
+        }
+      }
+    };
+    
+    // Create or update structured data script
+    let schemaScript = document.getElementById(`product-schema-${product.id}`) as HTMLScriptElement | null;
+    if (!schemaScript) {
+      schemaScript = document.createElement('script');
+      schemaScript.id = `product-schema-${product.id}`;
+      schemaScript.type = 'application/ld+json';
+      document.head.appendChild(schemaScript);
+    }
+    schemaScript.textContent = JSON.stringify(productSchema);
+    
+    return () => {
+      if (schemaScript && document.head.contains(schemaScript)) {
+        document.head.removeChild(schemaScript);
+      }
+    };
+  }, [product, displayPrice, isOutOfStock]);
+
   const handleAddToCart = () => {
     if (!isOutOfStock && onAddToCart) {
       onAddToCart(product, selectedVariant);

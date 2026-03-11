@@ -27,6 +27,15 @@ export function AgeVerificationProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   useEffect(() => {
+    // Skip verification for search engine crawlers to allow proper indexing
+    const userAgent = navigator.userAgent || '';
+    const isCrawler = /bot|crawler|spider|googlebot|bingbot|duckduckbot|slurp|twitterbot|facebookexternalhit/i.test(userAgent);
+    
+    if (isCrawler) {
+      setIsVerified(true);
+      return;
+    }
+    
     // Check if user has already verified their age
     const verified = localStorage.getItem(AGE_VERIFICATION_KEY);
     if (verified === 'true') {
