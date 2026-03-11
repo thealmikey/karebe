@@ -200,15 +200,12 @@ export default function AdminsPage() {
   };
 
   const handleDeleteAdmin = async (adminId: string) => {
+    console.log('[AdminDelete] Attempting to delete admin:', { adminId, url: `${ORCHESTRATION_API}/api/admin/admins/${adminId}` });
     if (!confirm('Are you sure you want to delete this admin?')) return;
     try {
-      // Use Railway orchestration API
-      const response = await fetch(`${ORCHESTRATION_API}/api/admin/admins`, {
+      // Use Railway orchestration API - ID goes in URL path
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/admins/${adminId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: adminId }),
       });
 
       const result = await response.json();
