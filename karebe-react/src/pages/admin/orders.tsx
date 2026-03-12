@@ -46,16 +46,16 @@ interface Rider {
   is_active: boolean;
 }
 
-const statusConfig: Record<OrderStatus, { label: string; color: string; icon: typeof Package }> = {
-  CART_DRAFT: { label: 'Draft', color: 'bg-gray-100 text-gray-700', icon: ShoppingCart },
-  ORDER_SUBMITTED: { label: 'New Order', color: 'bg-blue-100 text-blue-700', icon: AlertCircle },
-  CONFIRMED_BY_MANAGER: { label: 'Confirmed', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  DELIVERY_REQUEST_STARTED: { label: 'Finding Rider', color: 'bg-yellow-100 text-yellow-700', icon: Truck },
-  RIDER_CONFIRMED_DIGITAL: { label: 'Rider Assigned', color: 'bg-purple-100 text-purple-700', icon: User },
-  RIDER_CONFIRMED_MANUAL: { label: 'Rider Assigned', color: 'bg-purple-100 text-purple-700', icon: User },
-  OUT_FOR_DELIVERY: { label: 'Out for Delivery', color: 'bg-orange-100 text-orange-700', icon: Truck },
-  DELIVERED: { label: 'Delivered', color: 'bg-success-100 text-success-700', icon: CheckCircle },
-  CANCELLED: { label: 'Cancelled', color: 'bg-danger-100 text-danger-700', icon: AlertCircle },
+const statusConfig: Record<OrderStatus, { label: string; color: string; icon: typeof Package; stripColor: string }> = {
+  CART_DRAFT: { label: 'Draft', color: 'bg-gray-100 text-gray-700', icon: ShoppingCart, stripColor: 'border-l-gray-400' },
+  ORDER_SUBMITTED: { label: 'New Order', color: 'bg-blue-100 text-blue-700', icon: AlertCircle, stripColor: 'border-l-blue-500' },
+  CONFIRMED_BY_MANAGER: { label: 'Confirmed', color: 'bg-green-100 text-green-700', icon: CheckCircle, stripColor: 'border-l-green-500' },
+  DELIVERY_REQUEST_STARTED: { label: 'Pending Call', color: 'bg-orange-100 text-orange-700', icon: Truck, stripColor: 'border-l-orange-500' },
+  RIDER_CONFIRMED_DIGITAL: { label: 'Rider Assigned', color: 'bg-purple-100 text-purple-700', icon: User, stripColor: 'border-l-purple-500' },
+  RIDER_CONFIRMED_MANUAL: { label: 'Rider Assigned', color: 'bg-purple-100 text-purple-700', icon: User, stripColor: 'border-l-purple-500' },
+  OUT_FOR_DELIVERY: { label: 'Out for Delivery', color: 'bg-orange-100 text-orange-700', icon: Truck, stripColor: 'border-l-orange-500' },
+  DELIVERED: { label: 'Delivered', color: 'bg-success-100 text-success-700', icon: CheckCircle, stripColor: 'border-l-green-500' },
+  CANCELLED: { label: 'Cancelled', color: 'bg-danger-100 text-danger-700', icon: AlertCircle, stripColor: 'border-l-red-500' },
 };
 
 function OrdersPageContent() {
@@ -419,7 +419,17 @@ function getCallUrl(phone: string): string {
               const isExpanded = expandedOrder === order.id;
               
               return (
-                <Card key={order.id} className={`${isExpanded ? 'ring-2 ring-brand-200' : ''} overflow-hidden`}>
+                <Card key={order.id} className={`
+                  ${isExpanded ? 'ring-2 ring-brand-200' : ''} 
+                  bg-white 
+                  rounded-xl 
+                  shadow-sm 
+                  border-l-4 
+                  ${status.stripColor}
+                  overflow-hidden 
+                  transition-all 
+                  hover:shadow-lg
+                `}>
                   <CardContent className="p-3 sm:p-4">
                     {/* Order Header - Mobile stacked layout */}
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -583,12 +593,13 @@ function getCallUrl(phone: string): string {
                       </div>
 
                       {/* Right side: Price, actions, expand */}
-                      <div className="flex sm:flex-col items-center justify-between sm:items-end gap-2 sm:gap-2 ml-auto sm:ml-0">
+                      <div className="flex sm:flex-col items-center justify-between sm:items-end gap-2 sm:gap-2 ml-auto sm:ml-0 bg-gray-50 sm:bg-transparent p-2 sm:p-0 rounded-lg sm:rounded-none">
                         <div className="text-right">
-                          <p className="font-bold text-brand-900 text-sm sm:text-base">
+                          <p className="text-xs text-gray-400">Total</p>
+                          <p className="font-bold text-gray-800 text-sm sm:text-base">
                             KES {order.total_amount.toLocaleString()}
                           </p>
-                          <p className="text-xs sm:text-sm text-brand-500">
+                          <p className="text-gray-400 text-xs">
                             {order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}
                           </p>
                         </div>
