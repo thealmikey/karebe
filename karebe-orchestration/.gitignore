@@ -1,32 +1,24 @@
 # Dependencies
 node_modules/
 
-# Build
-dist/
+# Environment variables — configure in Vercel for production
+# .env is tracked for deployment
 
-# Environment
-.env
-.env.local
-.env.*.local
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
 
 # Logs
 *.log
 npm-debug.log*
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
+# Build output
+dist/
+.next/
+.vercel/
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Test
-coverage/
-.nyc_output/
-
-# Misc
-*.tgz
-.cache/
+# Supabase local dev (not needed in remote)
+supabase/.branches/
+supabase/.temp/
