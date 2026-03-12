@@ -115,7 +115,7 @@ export async function startDelivery(orderId: string, riderId: string): Promise<{
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ rider_id: riderId, actor_type: 'rider' }),
+      body: JSON.stringify({ actor_id: riderId, actor_type: 'rider' }),
     });
     
     const data = await response.json();
@@ -142,7 +142,7 @@ export async function completeDelivery(orderId: string, riderId: string): Promis
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ rider_id: riderId, actor_type: 'rider' }),
+      body: JSON.stringify({ actor_id: riderId, actor_type: 'rider' }),
     });
     
     const data = await response.json();

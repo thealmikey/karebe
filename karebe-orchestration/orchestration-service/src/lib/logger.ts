@@ -36,8 +36,5 @@ export const logger = winston.createLogger({
   ],
 });
 
-// Add file transports in production
-if (!isDevelopment) {
-  logger.add(new winston.transports.File({ filename: 'logs/error.log', level: 'error' }));
-  logger.add(new winston.transports.File({ filename: 'logs/combined.log' }));
-}
+// Note: File transports removed for Railway deployment
+// Railway captures console output automatically
