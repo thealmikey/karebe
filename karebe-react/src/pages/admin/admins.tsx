@@ -145,13 +145,12 @@ export default function AdminsPage() {
     
     try {
       // Use Railway orchestration API
-      const response = await fetch(`${ORCHESTRATION_API}/api/admin/admins`, {
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/admins/${editingAdmin.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: editingAdmin.id,
           name: editingAdmin.name,
           phone: editingAdmin.phone,
           role: editingAdmin.role,
@@ -176,13 +175,12 @@ export default function AdminsPage() {
   const handleToggleActive = async (admin: AdminUser) => {
     try {
       // Use Railway orchestration API
-      const response = await fetch(`${ORCHESTRATION_API}/api/admin/admins`, {
+      const response = await fetch(`${ORCHESTRATION_API}/api/admin/admins/${admin.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: admin.id,
           is_active: !admin.is_active,
         }),
       });

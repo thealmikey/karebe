@@ -157,13 +157,8 @@ router.post('/admins', async (req: Request, res: Response) => {
   }
 });
 
-/**
- * PUT /api/admin/admins/:id
- * Update an admin user
- */
-router.put('/admins/:id', async (req: Request, res: Response) => {
+async function updateAdminUser(id: string, req: Request, res: Response) {
   try {
-    const { id } = req.params;
     const { email, name, phone, role, branch_id, is_active, password } = req.body;
 
     const updateData: Record<string, unknown> = {
@@ -214,6 +209,31 @@ router.put('/admins/:id', async (req: Request, res: Response) => {
       error: 'Failed to update admin user',
     });
   }
+}
+
+/**
+ * PUT /api/admin/admins
+ * Update an admin user (expects id in body for legacy clients)
+ */
+router.put('/admins', async (req: Request, res: Response) => {
+  const id = req.body?.id ?? req.body?.adminId ?? req.body?.admin_id;
+  if (!id) {
+    return res.status(400).json({
+      success: false,
+      error: 'Admin id is required',
+    });
+  }
+
+  return updateAdminUser(String(id), req, res);
+});
+
+/**
+ * PUT /api/admin/admins/:id
+ * Update an admin user
+ */
+router.put('/admins/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  return updateAdminUser(id, req, res);
 });
 
 /**
