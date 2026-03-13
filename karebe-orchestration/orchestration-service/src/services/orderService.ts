@@ -18,6 +18,7 @@ import {
   ConfirmDeliveryRequest,
   UpdateOrderDetailsRequest,
   StateTransition,
+  ValidStateTransition,
   StateTransitionError,
   RaceConditionError,
   RiderUnavailableError,
@@ -229,6 +230,16 @@ export class OrderService {
       request.actor_type
     );
 
+    // Ensure DB transition table has the required transition (prevents trigger failures)
+    const transitionCheck = stateMachine.validateTransition(
+      order.status,
+      request.status,
+      request.actor_type
+    );
+    if (transitionCheck.valid && transitionCheck.transition) {
+      await this.ensureValidTransitionRecord(transitionCheck.transition);
+    }
+
     // Check for race conditions (optimistic locking)
     if (request.expected_version !== undefined) {
       if (order.state_version !== request.expected_version) {
@@ -285,6 +296,36 @@ export class OrderService {
     });
 
     return updatedOrder as Order;
+  }
+
+  private async ensureValidTransitionRecord(transition: ValidStateTransition): Promise<void> {
+    const { data, error } = await supabase
+      .from('valid_state_transitions')
+      .select('id')
+      .eq('from_status', transition.from_status)
+      .eq('to_status', transition.to_status)
+      .maybeSingle();
+
+    if (error) {
+      logger.warn('Failed to check valid_state_transitions', { error, transition });
+      return;
+    }
+
+    if (!data) {
+      const { error: insertError } = await supabase
+        .from('valid_state_transitions')
+        .insert({
+          from_status: transition.from_status,
+          to_status: transition.to_status,
+          allowed_actors: transition.allowed_actors,
+          requires_lock: transition.requires_lock,
+          description: transition.description,
+        });
+
+      if (insertError) {
+        logger.warn('Failed to insert valid_state_transition', { insertError, transition });
+      }
+    }
   }
 
   /**
