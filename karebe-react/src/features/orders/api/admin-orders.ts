@@ -57,6 +57,19 @@ export interface OrderResponse {
   data: Order;
 }
 
+export interface CreateAdminOrderInput {
+  customer_phone: string;
+  customer_name?: string | null;
+  delivery_address?: string | null;
+  delivery_notes?: string | null;
+  branch_id?: string | null;
+  items: OrderItem[];
+  total?: number;
+  delivery_fee?: number;
+  tax?: number;
+  trigger_source?: string;
+}
+
 export async function getOrdersByStatus(status: OrderStatus, branchId?: string): Promise<Order[]> {
   try {
     const url = new URL(`${ORCHESTRATION_API_URL}/orders`);
@@ -131,6 +144,44 @@ export async function getOrderById(orderId: string): Promise<Order | null> {
     console.warn('Orchestration service unavailable');
     return demoOrders.find(o => o.id === orderId) || null;
   }
+}
+
+export async function createAdminOrder(input: CreateAdminOrderInput): Promise<Order> {
+  const computedTotal = input.items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+  const response = await fetch(`${ORCHESTRATION_API_URL}/orders`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customer_phone: input.customer_phone,
+      customer_name: input.customer_name || null,
+      delivery_address: input.delivery_address || '',
+      delivery_notes: input.delivery_notes || null,
+      branch_id: input.branch_id || null,
+      delivery_fee: input.delivery_fee ?? 0,
+      tax: input.tax ?? 0,
+      total: input.total ?? computedTotal,
+      items: input.items,
+      trigger_source: input.trigger_source || 'phone_call',
+    }),
+  });
+
+  if (!response.ok) {
+    let errorPayload: { message?: string; error?: string } | null = null;
+    try {
+      errorPayload = await response.json();
+    } catch {
+      // ignore parse errors
+    }
+    const message = errorPayload?.message || errorPayload?.error || `Failed to create order: ${response.statusText}`;
+    throw new Error(message);
+  }
+
+  const result: OrderResponse = await response.json();
+  if (!result.success) {
+    throw new Error('Failed to create order');
+  }
+
+  return result.data;
 }
 
 export interface UpdateStatusRequest {

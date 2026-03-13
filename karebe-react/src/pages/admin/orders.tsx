@@ -15,11 +15,15 @@ import {
   getAllOrders, 
   updateOrderStatus, 
   assignRider,
-  Order
+  Order,
+  OrderItem,
+  createAdminOrder
 } from '@/features/orders/api/admin-orders';
 import { OrderCard } from '@/features/orders/components/order-card';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
+import { getProducts } from '@/features/products/api/get-products';
+import type { ProductDisplay } from '@/features/products/types';
 
 interface Rider {
   id: string;
@@ -41,6 +45,25 @@ function OrdersPageContent() {
   const [riders, setRiders] = useState<Rider[]>([]);
   const [showRiderDialog, setShowRiderDialog] = useState(false);
   const [selectedRiderId, setSelectedRiderId] = useState<string>('');
+
+  const [products, setProducts] = useState<ProductDisplay[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [productsError, setProductsError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createSuccess, setCreateSuccess] = useState<string | null>(null);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [createForm, setCreateForm] = useState({
+    customer_name: '',
+    customer_phone: '',
+    delivery_address: '',
+    delivery_notes: '',
+  });
+  const [draftItem, setDraftItem] = useState({
+    productId: '',
+    variantId: '',
+    quantity: 1,
+  });
   
   // Editing state for OrderCard
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
@@ -112,6 +135,34 @@ function OrdersPageContent() {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
+  }, []);
+
+  const fetchProducts = async () => {
+    setProductsLoading(true);
+    setProductsError(null);
+    try {
+      const result = await getProducts({ perPage: 200, inStock: true, sortBy: 'name_asc' });
+      const list = result?.data || [];
+      setProducts(list);
+      if (list.length > 0) {
+        const firstProduct = list[0];
+        const firstVariant = firstProduct.variants?.[0];
+        setDraftItem((prev) => ({
+          productId: prev.productId || firstProduct.id,
+          variantId: prev.variantId || (firstVariant ? firstVariant.id : ''),
+          quantity: prev.quantity || 1,
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to load products:', err);
+      setProductsError('Failed to load products');
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
   }, []);
 
   function getActorId(userId?: string): string {
@@ -214,6 +265,81 @@ function OrdersPageContent() {
       setActionLoading(null);
       setSelectedOrder(null);
       setSelectedRiderId('');
+    }
+  };
+
+  const selectedProduct = products.find((p) => p.id === draftItem.productId);
+  const selectedVariants = selectedProduct?.variants || [];
+  const selectedVariant = selectedVariants.find((v) => v.id === draftItem.variantId) || selectedVariants[0];
+
+  const handleAddItem = () => {
+    setCreateError(null);
+    setCreateSuccess(null);
+    if (!selectedProduct) {
+      setCreateError('Please select a product.');
+      return;
+    }
+    if (!selectedVariant) {
+      setCreateError('Please select a product variant.');
+      return;
+    }
+    if (draftItem.quantity < 1) {
+      setCreateError('Quantity must be at least 1.');
+      return;
+    }
+
+    const newItem: OrderItem = {
+      product_id: selectedProduct.id,
+      product_name: selectedProduct.name,
+      quantity: draftItem.quantity,
+      unit_price: selectedVariant.price,
+      variant: selectedVariant.volume,
+    };
+
+    setOrderItems((prev) => [...prev, newItem]);
+  };
+
+  const handleRemoveItem = (index: number) => {
+    setOrderItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const orderTotal = orderItems.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+
+  const handleCreateOrder = async () => {
+    setCreateError(null);
+    setCreateSuccess(null);
+    if (!createForm.customer_phone.trim()) {
+      setCreateError('Customer phone is required.');
+      return;
+    }
+    if (!createForm.delivery_address.trim()) {
+      setCreateError('Delivery address is required.');
+      return;
+    }
+    if (orderItems.length === 0) {
+      setCreateError('Add at least one item.');
+      return;
+    }
+
+    setCreateLoading(true);
+    try {
+      await createAdminOrder({
+        customer_phone: createForm.customer_phone.trim(),
+        customer_name: createForm.customer_name.trim() || null,
+        delivery_address: createForm.delivery_address.trim(),
+        delivery_notes: createForm.delivery_notes.trim() || null,
+        items: orderItems,
+        total: orderTotal,
+        trigger_source: 'phone_call',
+      });
+      setCreateSuccess('Order created successfully.');
+      setOrderItems([]);
+      setCreateForm({ customer_name: '', customer_phone: '', delivery_address: '', delivery_notes: '' });
+      await fetchOrders();
+    } catch (err) {
+      setCreateError((err as Error).message || 'Failed to create order.');
+    } finally {
+      setCreateLoading(false);
     }
   };
 
@@ -362,6 +488,182 @@ function OrdersPageContent() {
             <span className="text-sm">{error}</span>
           </div>
         )}
+
+        <Card className="mb-4">
+          <CardContent className="p-4 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-base sm:text-lg font-semibold text-brand-900">Create Order</h2>
+                <p className="text-xs sm:text-sm text-brand-600">Take phone or walk-in orders and add items manually.</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={fetchProducts} disabled={productsLoading}>
+                <RefreshCw className={`w-4 h-4 mr-2 ${productsLoading ? 'animate-spin' : ''}`} />
+                Refresh Products
+              </Button>
+            </div>
+
+            {productsError && (
+              <div className="bg-danger-50 border border-danger-200 rounded-lg p-3 text-danger-700 text-sm">
+                {productsError}
+              </div>
+            )}
+
+            {createError && (
+              <div className="bg-danger-50 border border-danger-200 rounded-lg p-3 text-danger-700 text-sm">
+                {createError}
+              </div>
+            )}
+
+            {createSuccess && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-green-700 text-sm">
+                {createSuccess}
+              </div>
+            )}
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-brand-800">Customer Name</label>
+                <input
+                  value={createForm.customer_name}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, customer_name: e.target.value }))}
+                  className="mt-1 w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                  placeholder="Optional"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-brand-800">Customer Phone</label>
+                <input
+                  value={createForm.customer_phone}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, customer_phone: e.target.value }))}
+                  className="mt-1 w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                  placeholder="+254..."
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-brand-800">Delivery Address</label>
+                <input
+                  value={createForm.delivery_address}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, delivery_address: e.target.value }))}
+                  className="mt-1 w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                  placeholder="Address"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-brand-800">Delivery Notes</label>
+                <input
+                  value={createForm.delivery_notes}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, delivery_notes: e.target.value }))}
+                  className="mt-1 w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-4">
+              <div className="sm:col-span-2">
+                <label className="text-sm font-medium text-brand-800">Product</label>
+                <select
+                  value={draftItem.productId}
+                  onChange={(e) => {
+                    const productId = e.target.value;
+                    const product = products.find((p) => p.id === productId);
+                    const variant = product?.variants?.[0];
+                    setDraftItem((prev) => ({
+                      ...prev,
+                      productId,
+                      variantId: variant ? variant.id : '',
+                    }));
+                  }}
+                  className="mt-1 w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                  disabled={productsLoading || products.length === 0}
+                >
+                  {products.length === 0 ? (
+                    <option value="">No products available</option>
+                  ) : (
+                    products.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-brand-800">Variant</label>
+                <select
+                  value={draftItem.variantId}
+                  onChange={(e) => setDraftItem((prev) => ({ ...prev, variantId: e.target.value }))}
+                  className="mt-1 w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                  disabled={productsLoading || selectedVariants.length === 0}
+                >
+                  {selectedVariants.length === 0 ? (
+                    <option value="">No variants</option>
+                  ) : (
+                    selectedVariants.map((variant) => (
+                      <option key={variant.id} value={variant.id}>
+                        {variant.volume} - KES {variant.price.toLocaleString()}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-brand-800">Qty</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={draftItem.quantity}
+                  onChange={(e) => setDraftItem((prev) => ({ ...prev, quantity: Number(e.target.value) }))}
+                  className="mt-1 w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <Button onClick={handleAddItem} disabled={productsLoading || products.length === 0}>
+                Add Item
+              </Button>
+              <div className="text-sm text-brand-700 font-medium">
+                Total: KES {orderTotal.toLocaleString()}
+              </div>
+            </div>
+
+            <div className="border border-brand-100 rounded-lg overflow-hidden">
+              <div className="grid grid-cols-12 bg-brand-50 px-3 py-2 text-xs font-semibold text-brand-700">
+                <div className="col-span-5">Item</div>
+                <div className="col-span-2 text-right">Qty</div>
+                <div className="col-span-3 text-right">Unit</div>
+                <div className="col-span-2 text-right">Actions</div>
+              </div>
+              {orderItems.length === 0 ? (
+                <div className="px-3 py-4 text-sm text-brand-500">No items added yet.</div>
+              ) : (
+                orderItems.map((item, index) => (
+                  <div key={`${item.product_id}-${index}`} className="grid grid-cols-12 items-center px-3 py-2 border-t text-sm">
+                    <div className="col-span-5">
+                      {item.product_name} {item.variant ? `(${item.variant})` : ''}
+                    </div>
+                    <div className="col-span-2 text-right">{item.quantity}</div>
+                    <div className="col-span-3 text-right">KES {item.unit_price.toLocaleString()}</div>
+                    <div className="col-span-2 text-right">
+                      <Button variant="ghost" size="sm" onClick={() => handleRemoveItem(index)}>
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <Button onClick={handleCreateOrder} disabled={createLoading || orderItems.length === 0}>
+                {createLoading ? 'Creating...' : 'Create Order'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Orders List - Using modern OrderCard component */}
         <div className="space-y-3 sm:space-y-4">
