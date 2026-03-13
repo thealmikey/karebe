@@ -243,9 +243,12 @@ router.patch('/:id/status', async (req: Request, res: Response) => {
       }
     }
     
+    const err = error as { message?: string; code?: string };
     res.status(500).json({
       success: false,
       error: 'Failed to update order status',
+      message: err?.message || 'Unknown error',
+      code: err?.code,
     });
   }
 });
