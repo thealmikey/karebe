@@ -33,6 +33,8 @@ interface Rider {
   is_active: boolean;
 }
 
+export type OrderCardAction = 'confirm' | 'startDelivery' | 'assignRider' | 'sendOut' | 'confirmDelivery' | 'cancel';
+
 interface OrderCardProps {
   order: Order;
   riders: Rider[];
@@ -49,7 +51,7 @@ interface OrderCardProps {
   onSaveEdit: () => void;
   onFormChange: (field: string, value: string) => void;
   actionLoading: boolean;
-  onAction: (action: 'confirm' | 'startDelivery' | 'assignRider') => void;
+  onAction: (action: OrderCardAction) => void;
   onCallRider?: (phone: string) => void;
   onWhatsAppRider?: (phone: string, order: Order) => void;
   onSmsRider?: (phone: string, order: Order) => void;
@@ -205,9 +207,57 @@ export function OrderCard({
             Assign Rider
           </Button>
         );
+      case 'RIDER_CONFIRMED_DIGITAL':
+      case 'RIDER_CONFIRMED_MANUAL':
+        return (
+          <Button
+            size="sm"
+            onClick={() => onAction('sendOut')}
+            className="bg-cyan-600 hover:bg-cyan-700 font-medium"
+          >
+            <Truck className="w-4 h-4 mr-1.5" />
+            Send Out
+          </Button>
+        );
+      case 'OUT_FOR_DELIVERY':
+        return (
+          <Button
+            size="sm"
+            onClick={() => onAction('confirmDelivery')}
+            className="bg-emerald-600 hover:bg-emerald-700 font-medium"
+          >
+            <CheckCircle className="w-4 h-4 mr-1.5" />
+            Confirm Delivered
+          </Button>
+        );
       default:
         return null;
     }
+  };
+
+  // Get secondary actions (Cancel, etc.) - only show for active orders
+  const getSecondaryActions = () => {
+    const isActiveOrder = !['CART_DRAFT', 'DELIVERED', 'CANCELLED'].includes(order.status);
+    
+    if (!isActiveOrder || actionLoading) return null;
+
+    return (
+      <div className="flex items-center gap-1 mt-2">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs py-1 h-7"
+          onClick={() => {
+            if (confirm('Are you sure you want to cancel this order?')) {
+              onAction('cancel');
+            }
+          }}
+        >
+          <X className="w-3 h-3 mr-1" />
+          Cancel Order
+        </Button>
+      </div>
+    );
   };
 
   // Priority indicator based on order age and status
@@ -418,6 +468,7 @@ export function OrderCard({
             {/* Actions - VERTICALLY STACKED on desktop */}
             <div className="flex items-center gap-2 sm:flex-col sm:gap-2 sm:w-full">
               {getPrimaryAction()}
+              {getSecondaryActions()}
               
               {/* Secondary Actions Row - Circular buttons */}
               <div className="flex items-center gap-1">

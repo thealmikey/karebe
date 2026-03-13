@@ -121,7 +121,7 @@ function OrdersPageContent() {
     return '00000000-0000-0000-0000-000000000001';
   }
 
-  const handleAction = async (action: 'confirm' | 'startDelivery' | 'assignRider', order: Order) => {
+  const handleAction = async (action: 'confirm' | 'startDelivery' | 'assignRider' | 'sendOut' | 'confirmDelivery' | 'cancel', order: Order) => {
     setActionLoading(order.id);
     try {
       switch (action) {
@@ -136,6 +136,31 @@ function OrdersPageContent() {
         case 'startDelivery':
           await updateOrderStatus(order.id, {
             status: 'DELIVERY_REQUEST_STARTED',
+            actor_type: 'admin',
+            actor_id: getActorId(user?.id),
+            expected_version: order.version,
+          });
+          break;
+        case 'sendOut':
+          // Rider confirmed, now sending out for delivery
+          await updateOrderStatus(order.id, {
+            status: 'OUT_FOR_DELIVERY',
+            actor_type: 'admin',
+            actor_id: getActorId(user?.id),
+            expected_version: order.version,
+          });
+          break;
+        case 'confirmDelivery':
+          await updateOrderStatus(order.id, {
+            status: 'DELIVERED',
+            actor_type: 'admin',
+            actor_id: getActorId(user?.id),
+            expected_version: order.version,
+          });
+          break;
+        case 'cancel':
+          await updateOrderStatus(order.id, {
+            status: 'CANCELLED',
             actor_type: 'admin',
             actor_id: getActorId(user?.id),
             expected_version: order.version,
