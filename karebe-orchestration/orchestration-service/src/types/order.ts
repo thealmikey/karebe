@@ -305,6 +305,7 @@ export interface ConfirmDeliveryRequest {
 
 export interface UpdateOrderDetailsRequest {
   customer_name?: string;
+  customer_phone?: string;
   delivery_address?: string;
   delivery_notes?: string;
   delivery_method?: 'delivery' | 'pickup';

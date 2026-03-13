@@ -244,19 +244,49 @@ function OrdersPageContent() {
       : 'http://localhost:3001/api';
 
     try {
-      // Only save if there are actual changes
-      const hasChanges = editForm.customer_name || editForm.customer_phone || editForm.delivery_address || editForm.delivery_notes;
-      
+      const normalizedOriginal = {
+        customer_name: order.customer_name || '',
+        customer_phone: order.customer_phone === 'PENDING_CALL' ? '' : (order.customer_phone || ''),
+        delivery_address: order.delivery_address || '',
+        delivery_notes: order.delivery_notes || '',
+      };
+      const normalizedEdits = {
+        customer_name: editForm.customer_name.trim(),
+        customer_phone: editForm.customer_phone?.trim() || '',
+        delivery_address: editForm.delivery_address.trim(),
+        delivery_notes: editForm.delivery_notes.trim(),
+      };
+
+      const hasChanges = Object.keys(normalizedEdits).some((key) => {
+        const field = key as keyof typeof normalizedEdits;
+        return normalizedEdits[field] !== normalizedOriginal[field];
+      });
+
       if (hasChanges) {
+        const payload: Record<string, unknown> = {
+          actor_type: 'admin',
+          actor_id: getActorId(user?.id),
+        };
+
+        if (normalizedEdits.customer_name) {
+          payload.customer_name = normalizedEdits.customer_name;
+        }
+        if (normalizedEdits.customer_phone !== '') {
+          payload.customer_phone = normalizedEdits.customer_phone;
+        } else if (normalizedOriginal.customer_phone !== '') {
+          payload.customer_phone = '';
+        }
+        if (normalizedEdits.delivery_address) {
+          payload.delivery_address = normalizedEdits.delivery_address;
+        }
+        if (normalizedEdits.delivery_notes !== '' || normalizedOriginal.delivery_notes !== '') {
+          payload.delivery_notes = normalizedEdits.delivery_notes;
+        }
+
         const response = await fetch(`${ORCHESTRATION_API_URL}/orders/${editingOrderId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            customer_name: editForm.customer_name || null,
-            customer_phone: editForm.customer_phone || null,
-            delivery_address: editForm.delivery_address || null,
-            delivery_notes: editForm.delivery_notes || null,
-          }),
+          body: JSON.stringify(payload),
         });
 
         if (response.ok) {

@@ -530,6 +530,10 @@ export class OrderService {
       updateData.delivery_notes = request.delivery_notes || null;
     }
 
+    if (request.customer_phone !== undefined) {
+      updateData.customer_phone = request.customer_phone || null;
+    }
+
     const { data, error } = await supabase
       .from('orders')
       .update(updateData)

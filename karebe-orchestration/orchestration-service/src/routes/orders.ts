@@ -67,6 +67,7 @@ const confirmRiderSchema = z.object({
 
 const updateOrderDetailsSchema = z.object({
   customer_name: z.string().min(1).optional(),
+  customer_phone: z.string().optional(),
   delivery_address: z.string().min(1).optional(),
   delivery_notes: z.string().optional(),
   actor_type: z.nativeEnum(ActorType),
@@ -266,7 +267,43 @@ router.patch('/:id', async (req: Request, res: Response) => {
       });
     }
 
-    const order = await orderService.updateOrderDetails(orderId, validation.data);
+    const request = { ...validation.data };
+    if (request.customer_phone !== undefined) {
+      const trimmedPhone = request.customer_phone.trim();
+      if (trimmedPhone.length === 0) {
+        request.customer_phone = '';
+      } else {
+        const phoneValidation = validatePhone(trimmedPhone);
+        if (!phoneValidation.valid) {
+          return res.status(400).json({
+            success: false,
+            error: 'Validation failed',
+            details: phoneValidation.errors.map((message) => ({
+              code: 'invalid_phone',
+              path: ['customer_phone'],
+              message,
+            })),
+          });
+        }
+
+        const normalizedPhone = normalizePhone(trimmedPhone);
+        if (!normalizedPhone.valid) {
+          return res.status(400).json({
+            success: false,
+            error: 'Validation failed',
+            details: normalizedPhone.errors.map((message) => ({
+              code: 'invalid_phone',
+              path: ['customer_phone'],
+              message,
+            })),
+          });
+        }
+
+        request.customer_phone = normalizedPhone.data;
+      }
+    }
+
+    const order = await orderService.updateOrderDetails(orderId, request);
     
     // Handle order not found (null return)
     if (!order) {
