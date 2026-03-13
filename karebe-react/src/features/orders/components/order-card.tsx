@@ -435,9 +435,24 @@ export function OrderCard({
                   <p className="text-xs uppercase tracking-wide text-slate-400">Delivery</p>
                   <div className="flex items-start gap-2 min-w-0">
                     <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-slate-600 text-sm truncate">
-                      {order.delivery_address}
-                    </span>
+                    {order.delivery_address === 'PENDING_CALL' || !order.delivery_address ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold">
+                          Awaiting address
+                        </span>
+                        <button
+                          type="button"
+                          onClick={onStartEdit}
+                          className="text-xs text-slate-600 hover:text-slate-900 underline decoration-dotted"
+                        >
+                          Add delivery location
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-slate-600 text-sm truncate">
+                        {order.delivery_address}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -574,7 +589,20 @@ export function OrderCard({
                     <MapPin className="w-4 h-4 mt-0.5 text-gray-400 flex-shrink-0" />
                     <div>
                       <p className="text-gray-500 text-xs">Delivery Address</p>
-                      <p className="text-gray-700">{order.delivery_address}</p>
+                      {order.delivery_address === 'PENDING_CALL' || !order.delivery_address ? (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-amber-600 font-medium">Awaiting address</span>
+                          <button 
+                            type="button"
+                            onClick={onStartEdit}
+                            className="text-xs text-blue-600 hover:underline text-left"
+                          >
+                            Add delivery location
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-gray-700">{order.delivery_address}</p>
+                      )}
                     </div>
                   </div>
                   {order.delivery_notes && (
