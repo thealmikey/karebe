@@ -7,6 +7,10 @@
  */
 
 import { parsePhoneNumber, isValidPhoneNumber as libIsValidPhoneNumber } from 'libphonenumber-js';
+import type { NumberFormat } from 'libphonenumber-js';
+
+// E164 format constant
+const E164_FORMAT: NumberFormat = 'E.164';
 import { parsePhoneNumber as parsePhoneNumberFromString } from 'libphonenumber-js/min';
 
 // Kenya country code
@@ -65,7 +69,7 @@ export function normalizePhone(phone: string): PhoneResult<string> {
     
     if (parsed && parsed.isValid()) {
       if (parsed.country === 'KE') {
-        return { success: true, data: parsed.format('E164') };
+        return { success: true, data: parsed.format(E164_FORMAT) };
       } else {
         const nationalNumber = parsed.nationalNumber;
         if (nationalNumber?.toString().length === 9 && nationalNumber.toString().startsWith('7')) {
