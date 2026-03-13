@@ -26,14 +26,18 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  order_reference?: string; // Human-friendly reference (e.g., KRB-042)
   customer_phone: string;
   customer_name?: string;
   delivery_address: string;
   delivery_notes?: string;
+  delivery_method?: 'delivery' | 'pickup';
   branch_id: string;
   status: OrderStatus;
   items: OrderItem[];
   total_amount: number;
+  delivery_fee?: number;
+  vat_amount?: number;
   created_at: string;
   updated_at: string;
   version: number;
@@ -193,6 +197,7 @@ export async function assignRider(orderId: string, request: AssignRiderRequest):
 const demoOrders: Order[] = [
   {
     id: 'demo-001',
+    order_reference: 'KRB-001',
     customer_phone: '+254712345678',
     customer_name: 'John Doe',
     delivery_address: '123 Main St, Nairobi',
@@ -208,6 +213,7 @@ const demoOrders: Order[] = [
   },
   {
     id: 'demo-002',
+    order_reference: 'KRB-002',
     customer_phone: '+254723456789',
     customer_name: 'Jane Smith',
     delivery_address: '456 Park Ave, Nairobi',
@@ -224,6 +230,7 @@ const demoOrders: Order[] = [
   },
   {
     id: 'demo-003',
+    order_reference: 'KRB-003',
     customer_phone: '+254734567890',
     customer_name: 'Mike Johnson',
     delivery_address: '789 Westlands Rd, Nairobi',
@@ -241,6 +248,7 @@ const demoOrders: Order[] = [
   },
   {
     id: 'demo-004',
+    order_reference: 'KRB-004',
     customer_phone: '+254745678901',
     customer_name: 'Sarah Williams',
     delivery_address: '321 Kilimani Rd, Nairobi',

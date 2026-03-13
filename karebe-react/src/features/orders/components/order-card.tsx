@@ -14,13 +14,16 @@ import {
   Send,
   Edit2,
   Save,
-  X
+  X,
+  PhoneCall,
+  AlertTriangle
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Order, OrderStatus } from '../api/admin-orders';
+import { formatOrderDisplay, getOrderUrgency } from '../utils/order-display';
 
 interface Rider {
   id: string;
@@ -54,27 +57,31 @@ interface OrderCardProps {
 
 // Status configuration with improved color coding for dispatch
 // Visual hierarchy: Order ID > Status > Price > Actions
+// Now includes workflow-based statuses for shop owner clarity
 // Export for use in other components
 export const statusConfig: Record<OrderStatus, { 
   label: string; 
   color: string; 
   bgColor: string;
   borderColor: string;
-  dotColor: string; // Colored dot for status badge
-  stripColor: string; // Left border color strip for quick scanning
+  dotColor: string;
+  stripColor: string;
   icon: typeof Package;
-  emoji: string; // Emoji indicator
-  priority: number; // 1 = highest priority for dispatch
+  emoji: string;
+  priority: number;
+  // Workflow properties
+  actionLabel?: string;  // What action to show on button
+  actionVariant?: 'default' | 'success' | 'warning' | 'danger' | 'primary';
 }> = {
   CART_DRAFT: { label: 'Draft', color: 'text-gray-700', bgColor: 'bg-gray-50', borderColor: 'border-gray-200', dotColor: 'bg-gray-500', stripColor: 'border-l-gray-400', icon: ShoppingCart, emoji: '⚪', priority: 6 },
-  ORDER_SUBMITTED: { label: 'New Order', color: 'text-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', dotColor: 'bg-blue-500', stripColor: 'border-l-blue-500', icon: AlertCircle, emoji: '🔵', priority: 1 },
-  CONFIRMED_BY_MANAGER: { label: 'Confirmed', color: 'text-green-700', bgColor: 'bg-green-50', borderColor: 'border-green-200', dotColor: 'bg-green-500', stripColor: 'border-l-green-500', icon: CheckCircle, emoji: '🟢', priority: 2 },
-  DELIVERY_REQUEST_STARTED: { label: 'Pending Call', color: 'text-orange-700', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', dotColor: 'bg-orange-500', stripColor: 'border-l-orange-500', icon: Truck, emoji: '🟠', priority: 3 },
-  RIDER_CONFIRMED_DIGITAL: { label: 'Rider Assigned', color: 'text-purple-700', bgColor: 'bg-purple-50', borderColor: 'border-purple-200', dotColor: 'bg-purple-500', stripColor: 'border-l-purple-500', icon: User, emoji: '🟣', priority: 4 },
-  RIDER_CONFIRMED_MANUAL: { label: 'Rider Assigned', color: 'text-purple-700', bgColor: 'bg-purple-50', borderColor: 'border-purple-200', dotColor: 'bg-purple-500', stripColor: 'border-l-purple-500', icon: User, emoji: '🟣', priority: 4 },
-  OUT_FOR_DELIVERY: { label: 'Out for Delivery', color: 'text-orange-700', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', dotColor: 'bg-orange-500', stripColor: 'border-l-orange-500', icon: Truck, emoji: '🟠', priority: 5 },
+  ORDER_SUBMITTED: { label: 'New Order', color: 'text-blue-700', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', dotColor: 'bg-blue-500', stripColor: 'border-l-blue-500', icon: AlertCircle, emoji: '📥', priority: 1, actionLabel: 'Confirm Order', actionVariant: 'success' },
+  CONFIRMED_BY_MANAGER: { label: 'Confirmed', color: 'text-green-700', bgColor: 'bg-green-50', borderColor: 'border-green-200', dotColor: 'bg-green-500', stripColor: 'border-l-green-500', icon: CheckCircle, emoji: '✅', priority: 2, actionLabel: 'Start Preparing', actionVariant: 'primary' },
+  DELIVERY_REQUEST_STARTED: { label: 'Ready', color: 'text-orange-700', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', dotColor: 'bg-orange-500', stripColor: 'border-l-orange-500', icon: Truck, emoji: '📦', priority: 3, actionLabel: 'Assign Rider', actionVariant: 'primary' },
+  RIDER_CONFIRMED_DIGITAL: { label: 'Rider Assigned', color: 'text-purple-700', bgColor: 'bg-purple-50', borderColor: 'border-purple-200', dotColor: 'bg-purple-500', stripColor: 'border-l-purple-500', icon: User, emoji: '🏍️', priority: 4, actionLabel: 'Send Out', actionVariant: 'primary' },
+  RIDER_CONFIRMED_MANUAL: { label: 'Rider Assigned', color: 'text-purple-700', bgColor: 'bg-purple-50', borderColor: 'border-purple-200', dotColor: 'bg-purple-500', stripColor: 'border-l-purple-500', icon: User, emoji: '🏍️', priority: 4, actionLabel: 'Send Out', actionVariant: 'primary' },
+  OUT_FOR_DELIVERY: { label: 'Out for Delivery', color: 'text-cyan-700', bgColor: 'bg-cyan-50', borderColor: 'border-cyan-200', dotColor: 'bg-cyan-500', stripColor: 'border-l-cyan-500', icon: Truck, emoji: '🚴', priority: 5, actionLabel: 'Confirm Delivered', actionVariant: 'success' },
   DELIVERED: { label: 'Delivered', color: 'text-emerald-700', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', dotColor: 'bg-emerald-500', stripColor: 'border-l-emerald-500', icon: CheckCircle, emoji: '✅', priority: 7 },
-  CANCELLED: { label: 'Cancelled', color: 'text-red-700', bgColor: 'bg-red-50', borderColor: 'border-red-200', dotColor: 'bg-red-500', stripColor: 'border-l-red-500', icon: AlertCircle, emoji: '🔴', priority: 8 },
+  CANCELLED: { label: 'Cancelled', color: 'text-red-700', bgColor: 'bg-red-50', borderColor: 'border-red-200', dotColor: 'bg-red-500', stripColor: 'border-l-red-500', icon: AlertCircle, emoji: '❌', priority: 8 },
 };
 
 function formatTime(dateString: string): string {
@@ -155,14 +162,26 @@ export function OrderCard({
     switch (order.status) {
       case 'ORDER_SUBMITTED':
         return (
-          <Button
-            size="sm"
-            onClick={() => onAction('confirm')}
-            className="bg-green-600 hover:bg-green-700 font-medium"
-          >
-            <CheckCircle className="w-4 h-4 mr-1.5" />
-            Confirm
-          </Button>
+          <div className="flex gap-2">
+            {/* Call Customer Button - Primary for new orders */}
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-green-500 text-green-700 hover:bg-green-50"
+              onClick={() => window.location.href = `tel:${order.customer_phone}`}
+            >
+              <PhoneCall className="w-4 h-4 mr-1.5" />
+              Call
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => onAction('confirm')}
+              className="bg-green-600 hover:bg-green-700 font-medium"
+            >
+              <CheckCircle className="w-4 h-4 mr-1.5" />
+              Confirm
+            </Button>
+          </div>
         );
       case 'CONFIRMED_BY_MANAGER':
         return (
@@ -232,7 +251,7 @@ export function OrderCard({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-gray-800 text-lg tracking-tight">
-                  #{order.id.slice(-6)}
+                  {formatOrderDisplay(order.id, order.order_reference)}
                 </h3>
                 {getPriorityIndicator()}
               </div>

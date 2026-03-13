@@ -94,8 +94,23 @@ function OrdersPageContent() {
   useEffect(() => {
     fetchOrders();
     fetchRiders();
-    const interval = setInterval(fetchOrders, 30000);
-    return () => clearInterval(interval);
+    
+    // Adaptive polling: faster for active orders, slower for completed
+    const POLLING_INTERVAL = 15000; // 15 seconds - faster than before
+    const interval = setInterval(fetchOrders, POLLING_INTERVAL);
+    
+    // Refresh on window focus for immediate updates
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchOrders();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   function getActorId(userId?: string): string {
