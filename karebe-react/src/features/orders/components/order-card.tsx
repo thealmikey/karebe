@@ -133,6 +133,14 @@ function getSmsUrl(phone: string, order: Order): string {
   return `sms:${phone}?body=${encodeURIComponent(message)}`;
 }
 
+function getCustomerDisplayName(order: Order): string {
+  if (order.customer_name && order.customer_name.trim().length > 0) {
+    return order.customer_name;
+  }
+  const suffix = order.id ? order.id.slice(-3) : '';
+  return suffix ? `Customer #${suffix}` : 'Customer';
+}
+
 export function OrderCard({
   order,
   riders,
@@ -381,7 +389,7 @@ export function OrderCard({
                 <div className="flex items-center gap-2 min-w-0">
                   <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <span className="font-semibold text-gray-800 truncate">
-                    {order.customer_name || 'Unknown'}
+                    {getCustomerDisplayName(order)}
                   </span>
                 </div>
                 
@@ -391,13 +399,13 @@ export function OrderCard({
                     <>
                       <PhoneCall className="w-4 h-4 text-amber-500 flex-shrink-0" />
                       <div className="flex flex-col">
-                        <span className="text-amber-600 font-medium text-sm">Call Order</span>
+                        <span className="text-amber-600 font-medium text-sm">Awaiting Call</span>
                         <button 
                           type="button"
                           onClick={onStartEdit}
                           className="text-xs text-blue-600 hover:underline text-left"
                         >
-                          Check time + logs
+                          Add phone details
                         </button>
                       </div>
                     </>
@@ -559,13 +567,13 @@ export function OrderCard({
                       <p className="text-gray-500 text-xs">Customer Phone</p>
                       {order.customer_phone === 'PENDING_CALL' ? (
                         <div className="flex flex-col">
-                          <span className="text-amber-600 font-medium">Call Order</span>
+                          <span className="text-amber-600 font-medium">Awaiting Call</span>
                           <button 
                             type="button"
                             onClick={onStartEdit}
                             className="text-xs text-blue-600 hover:underline text-left"
                           >
-                            Check time + logs
+                            Add phone details
                           </button>
                         </div>
                       ) : (
