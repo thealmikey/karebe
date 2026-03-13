@@ -199,7 +199,7 @@ export function OrderCard({
           <Button
             size="sm"
             onClick={() => onAction('startDelivery')}
-            className="bg-blue-600 hover:bg-blue-700 font-medium w-full justify-center"
+            className="bg-blue-600 hover:bg-blue-700 font-medium lg:w-full justify-center"
           >
             <Truck className="w-4 h-4 mr-1.5" />
             Start Delivery
@@ -210,7 +210,7 @@ export function OrderCard({
           <Button
             size="sm"
             onClick={() => onAction('assignRider')}
-            className="bg-purple-600 hover:bg-purple-700 font-medium w-full justify-center"
+            className="bg-purple-600 hover:bg-purple-700 font-medium lg:w-full justify-center"
           >
             <User className="w-4 h-4 mr-1.5" />
             Assign Rider
@@ -222,7 +222,7 @@ export function OrderCard({
           <Button
             size="sm"
             onClick={() => onAction('sendOut')}
-            className="bg-cyan-600 hover:bg-cyan-700 font-medium w-full justify-center"
+            className="bg-cyan-600 hover:bg-cyan-700 font-medium lg:w-full justify-center"
           >
             <Truck className="w-4 h-4 mr-1.5" />
             Send Out
@@ -233,7 +233,7 @@ export function OrderCard({
           <Button
             size="sm"
             onClick={() => onAction('confirmDelivery')}
-            className="bg-emerald-600 hover:bg-emerald-700 font-medium w-full justify-center"
+            className="bg-emerald-600 hover:bg-emerald-700 font-medium lg:w-full justify-center"
           >
             <CheckCircle className="w-4 h-4 mr-1.5" />
             Confirm Delivered
@@ -299,11 +299,11 @@ export function OrderCard({
     `}>
       <CardContent className="p-0">
         <div className="h-1 w-full bg-gradient-to-r from-slate-900/10 via-slate-900/0 to-transparent" />
-        {/* Main Card Content - Horizontal Layout */}
-        <div className="flex flex-col sm:flex-row">
+        {/* Main Card Content - Responsive Layout */}
+        <div className="flex flex-col lg:flex-row">
           
           {/* LEFT ZONE: Order Identity (Priority 1-2) */}
-          <div className="flex items-start gap-3 p-5 sm:w-56 sm:flex-shrink-0 border-b sm:border-b-0 sm:border-r border-slate-100">
+          <div className="flex items-start gap-3 p-4 lg:p-5 lg:w-52 lg:flex-shrink-0 border-b lg:border-b-0 lg:border-r border-slate-100">
             {/* Status Icon */}
             <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${status.bgColor} ${status.borderColor} border shadow-sm`}>
               <StatusIcon className={`w-5.5 h-5.5 ${status.color}`} />
@@ -330,7 +330,7 @@ export function OrderCard({
           </div>
 
           {/* CENTER ZONE: Customer & Order Info */}
-          <div className="flex-1 p-5 min-w-0">
+          <div className="flex-1 p-4 lg:p-5 min-w-0">
             {isEditing ? (
               // Edit Mode
               <div className="space-y-3">
@@ -388,7 +388,7 @@ export function OrderCard({
               </div>
             ) : (
               // Display Mode - GRID LAYOUT FOR SCANABILITY
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
                 {/* Customer Row */}
                 <div className="min-w-0 space-y-1">
                   <p className="text-[11px] uppercase tracking-wide text-slate-400">Customer</p>
@@ -431,7 +431,7 @@ export function OrderCard({
                 </div>
                 
                 {/* Address Row - Full width on mobile */}
-                <div className="sm:col-span-2 min-w-0 space-y-1">
+                <div className="md:col-span-2 min-w-0 space-y-1">
                   <p className="text-[11px] uppercase tracking-wide text-slate-400">Delivery</p>
                   <div className="flex items-start gap-2 min-w-0">
                     <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
@@ -442,7 +442,7 @@ export function OrderCard({
                 </div>
                 
                 {/* Timestamp - Secondary info */}
-                <div className="flex items-center gap-2 sm:col-start-2 sm:justify-end">
+                <div className="flex items-center gap-2 md:col-start-2 md:justify-end">
                   <Clock className="w-3.5 h-3.5 text-slate-400" />
                   <span className="text-slate-500 text-xs">
                     {formatRelativeTime(order.created_at)}
@@ -505,9 +505,9 @@ export function OrderCard({
           </div>
 
           {/* RIGHT ZONE: Price, Items, Actions */}
-          <div className="flex sm:flex-col items-center justify-between sm:justify-start gap-4 p-5 sm:p-5 bg-slate-50/80 sm:border-l border-slate-100 sm:w-52 flex-shrink-0">
+          <div className="flex flex-col gap-4 p-4 lg:p-5 bg-slate-50/80 lg:border-l border-slate-100 lg:w-52 flex-shrink-0">
             {/* Price Summary - Now with "Total" context */}
-            <div className="text-right">
+            <div className="flex items-center justify-between lg:block text-right">
               <p className="text-[11px] uppercase tracking-wide text-slate-400">Total</p>
               <p className="font-extrabold text-slate-900 text-2xl leading-tight tracking-tight">
                 KES {order.total_amount.toLocaleString()}
@@ -518,12 +518,12 @@ export function OrderCard({
             </div>
             
             {/* Actions - VERTICALLY STACKED on desktop */}
-            <div className="flex items-center gap-2 sm:flex-col sm:gap-2 sm:w-full">
+            <div className="flex flex-wrap items-center gap-2 lg:flex-col lg:gap-2 lg:w-full">
               {getPrimaryAction()}
               {getSecondaryActions()}
               
               {/* Secondary Actions Row - Circular buttons */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 lg:ml-0 ml-auto">
                 {!isEditing && (
                   <button
                     onClick={onStartEdit}
