@@ -399,3 +399,85 @@ export async function getDashboardStats(): Promise<{
     };
   }
 }
+
+// =============================================================================
+// Soft Delete Functions
+// =============================================================================
+
+export interface DeleteOrderRequest {
+  actor_type: 'admin' | 'customer' | 'rider';
+  actor_id: string;
+  reason?: string;
+  confirm: true;
+}
+
+export interface RestoreOrderRequest {
+  actor_type: 'admin' | 'customer' | 'rider';
+  actor_id: string;
+}
+
+/**
+ * Soft delete an order
+ */
+export async function deleteOrder(orderId: string, request: DeleteOrderRequest): Promise<Order> {
+  const response = await fetch(`${ORCHESTRATION_API_URL}/orders/${orderId}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.error || result.message || 'Failed to delete order');
+  }
+  return result.data;
+}
+
+/**
+ * Restore a soft-deleted order
+ */
+export async function restoreOrder(orderId: string, request: RestoreOrderRequest): Promise<Order> {
+  const response = await fetch(`${ORCHESTRATION_API_URL}/orders/${orderId}/restore`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.error || result.message || 'Failed to restore order');
+  }
+  return result.data;
+}
+
+/**
+ * Get all deleted orders (bin)
+ */
+export async function getDeletedOrders(branchId?: string): Promise<Order[]> {
+  const url = branchId 
+    ? `${ORCHESTRATION_API_URL}/orders/deleted/list?branch_id=${branchId}`
+    : `${ORCHESTRATION_API_URL}/orders/deleted/list`;
+  const response = await fetch(url);
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to fetch deleted orders');
+  }
+  return result.data;
+}
+
+/**
+ * Permanently delete an order (irreversible!)
+ */
+export async function permanentlyDeleteOrder(
+  orderId: string, 
+  actorType: 'admin' | 'customer' | 'rider', 
+  actorId: string
+): Promise<void> {
+  const response = await fetch(`${ORCHESTRATION_API_URL}/orders/${orderId}/permanent`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ actor_type: actorType, actor_id: actorId, confirm: true }),
+  });
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.error || result.message || 'Failed to permanently delete order');
+  }
+}

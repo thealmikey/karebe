@@ -16,7 +16,8 @@ import {
   Save,
   X,
   PhoneCall,
-  AlertTriangle
+  AlertTriangle,
+  Trash2
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +34,7 @@ interface Rider {
   is_active: boolean;
 }
 
-export type OrderCardAction = 'confirm' | 'startDelivery' | 'assignRider' | 'sendOut' | 'confirmDelivery' | 'cancel';
+export type OrderCardAction = 'confirm' | 'startDelivery' | 'assignRider' | 'sendOut' | 'confirmDelivery' | 'cancel' | 'delete';
 
 interface OrderCardProps {
   order: Order;
@@ -268,6 +269,19 @@ export function OrderCard({
         >
           <X className="w-3 h-3 mr-1" />
           Cancel Order
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs py-1 h-7"
+          onClick={() => {
+            if (confirm('⚠️ Delete this order?\n\nThis will SOFT-DELETE the order. It can be restored later from the deleted items section.\n\nSet confirm: true to proceed.')) {
+              onAction('delete');
+            }
+          }}
+        >
+          <Trash2 className="w-3 h-3 mr-1" />
+          Delete
         </Button>
       </div>
     );

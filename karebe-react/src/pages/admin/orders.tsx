@@ -17,9 +17,10 @@ import {
   assignRider,
   Order,
   OrderItem,
-  createAdminOrder
+  createAdminOrder,
+  deleteOrder
 } from '@/features/orders/api/admin-orders';
-import { OrderCard } from '@/features/orders/components/order-card';
+import { OrderCard, OrderCardAction } from '@/features/orders/components/order-card';
 import { isPendingCall } from '@/features/orders/utils/order-display';
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
@@ -221,7 +222,7 @@ function OrdersPageContent() {
     return '00000000-0000-0000-0000-000000000001';
   }
 
-  const handleAction = async (action: 'confirm' | 'startDelivery' | 'assignRider' | 'sendOut' | 'confirmDelivery' | 'cancel', order: Order) => {
+  const handleAction = async (action: OrderCardAction, order: Order) => {
     setActionLoading(order.id);
     try {
       switch (action) {
@@ -264,6 +265,13 @@ function OrdersPageContent() {
             actor_type: 'admin',
             actor_id: getActorId(user?.id),
             expected_version: order.version,
+          });
+          break;
+        case 'delete':
+          await deleteOrder(order.id, {
+            actor_type: 'admin',
+            actor_id: getActorId(user?.id),
+            confirm: true,
           });
           break;
         case 'assignRider':

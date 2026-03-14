@@ -301,28 +301,28 @@ router.patch('/:id', async (req: Request, res: Response) => {
         request.customer_phone = '';
       } else {
         const phoneValidation = validatePhone(trimmedPhone);
-        if (!phoneValidation.valid) {
+        if (!phoneValidation) {
           return res.status(400).json({
             success: false,
             error: 'Validation failed',
-            details: phoneValidation.errors.map((message) => ({
+            details: [{
               code: 'invalid_phone',
               path: ['customer_phone'],
-              message,
-            })),
+              message: 'Invalid phone number format',
+            }],
           });
         }
 
         const normalizedPhone = normalizePhone(trimmedPhone);
-        if (!normalizedPhone.valid) {
+        if (!normalizedPhone.success) {
           return res.status(400).json({
             success: false,
             error: 'Validation failed',
-            details: normalizedPhone.errors.map((message) => ({
+            details: [{
               code: 'invalid_phone',
               path: ['customer_phone'],
-              message,
-            })),
+              message: normalizedPhone.error.message,
+            }],
           });
         }
 
