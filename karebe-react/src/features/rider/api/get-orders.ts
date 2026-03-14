@@ -1,9 +1,8 @@
+import { orchestrationApiBase } from '@/lib/orchestration-api';
+
 /**
  * Rider API - Get orders assigned to rider
  */
-
-// Get orchestration API URL from environment
-const ORCHESTRATION_API_URL = import.meta.env.VITE_ORCHESTRATION_API_URL || '';
 
 export interface RiderOrder {
   id: string;
@@ -35,9 +34,7 @@ export async function getRiderOrders(riderId: string, status?: string): Promise<
       params.append('status', status);
     }
     
-    // Use orchestration API URL if available, otherwise fall back to relative path
-    // Note: When using Railway URL, we need to include /api prefix
-    const baseUrl = ORCHESTRATION_API_URL ? `${ORCHESTRATION_API_URL}/api` : '/api';
+    const baseUrl = orchestrationApiBase;
     const url = `${baseUrl}/riders/${riderId}/orders${params.toString() ? '?' + params.toString() : ''}`;
     console.log('[RiderAPI] Fetching orders from:', url);
     
@@ -78,7 +75,7 @@ export async function getRiderOrders(riderId: string, status?: string): Promise<
  */
 export async function confirmRider(orderId: string, riderId: string): Promise<{ success: boolean; message?: string }> {
   try {
-    const baseUrl = ORCHESTRATION_API_URL ? `${ORCHESTRATION_API_URL}/api` : '/api';
+    const baseUrl = orchestrationApiBase;
     const response = await fetch(`${baseUrl}/orders/${orderId}/confirm-rider`, {
       method: 'POST',
       headers: {
@@ -109,7 +106,7 @@ export async function confirmRider(orderId: string, riderId: string): Promise<{ 
  */
 export async function startDelivery(orderId: string, riderId: string): Promise<{ success: boolean; message?: string }> {
   try {
-    const baseUrl = ORCHESTRATION_API_URL ? `${ORCHESTRATION_API_URL}/api` : '/api';
+    const baseUrl = orchestrationApiBase;
     const response = await fetch(`${baseUrl}/orders/${orderId}/start-delivery`, {
       method: 'POST',
       headers: {
@@ -136,7 +133,7 @@ export async function startDelivery(orderId: string, riderId: string): Promise<{
  */
 export async function completeDelivery(orderId: string, riderId: string): Promise<{ success: boolean; message?: string }> {
   try {
-    const baseUrl = ORCHESTRATION_API_URL ? `${ORCHESTRATION_API_URL}/api` : '/api';
+    const baseUrl = orchestrationApiBase;
     const response = await fetch(`${baseUrl}/orders/${orderId}/complete`, {
       method: 'POST',
       headers: {

@@ -24,6 +24,7 @@ import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
 import { getProducts } from '@/features/products/api/get-products';
 import type { ProductDisplay } from '@/features/products/types';
+import { orchestrationApiBase } from '@/lib/orchestration-api';
 
 interface Rider {
   id: string;
@@ -365,9 +366,7 @@ function OrdersPageContent() {
     const order = orders.find(o => o.id === editingOrderId);
     if (!order) return;
 
-    const ORCHESTRATION_API_URL = import.meta.env.VITE_ORCHESTRATION_API_URL 
-      ? `${import.meta.env.VITE_ORCHESTRATION_API_URL}/api` 
-      : 'http://localhost:3001/api';
+    const ORCHESTRATION_API_URL = orchestrationApiBase;
 
     try {
       const normalizedOriginal = {

@@ -3,7 +3,9 @@
 // Connects to orchestration service for order management
 // =============================================================================
 
-const ORCHESTRATION_API_URL = import.meta.env.VITE_ORCHESTRATION_API_URL ? `${import.meta.env.VITE_ORCHESTRATION_API_URL}/api` : 'http://localhost:3001/api';
+import { orchestrationApiBase } from '@/lib/orchestration-api';
+
+const ORCHESTRATION_API_URL = orchestrationApiBase;
 
 export type OrderStatus = 
   | 'CART_DRAFT'
