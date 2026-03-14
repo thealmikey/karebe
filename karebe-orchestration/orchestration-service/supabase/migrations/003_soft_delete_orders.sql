@@ -6,7 +6,7 @@
 -- Add soft delete columns to orders table
 ALTER TABLE orders 
 ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ,
-ADD COLUMN IF NOT EXISTS deleted_by UUID REFERENCES profiles(id);
+ADD COLUMN IF NOT EXISTS deleted_by UUID; -- Note: No FK constraint to avoid demo user issues
 
 -- Create index for faster deleted orders queries
 CREATE INDEX IF NOT EXISTS idx_orders_deleted_at ON orders(deleted_at) WHERE deleted_at IS NOT NULL;

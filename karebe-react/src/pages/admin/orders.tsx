@@ -4,7 +4,8 @@ import {
   ShoppingCart, 
   LogOut,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Plus
 } from 'lucide-react';
 import { Container } from '@/components/layout/container';
 import { Button } from '@/components/ui/button';
@@ -56,6 +57,7 @@ function OrdersPageContent() {
   const [riders, setRiders] = useState<Rider[]>([]);
   const [showRiderDialog, setShowRiderDialog] = useState(false);
   const [selectedRiderId, setSelectedRiderId] = useState<string>('');
+  const [showCreateOrderDialog, setShowCreateOrderDialog] = useState(false);
 
   const [products, setProducts] = useState<ProductDisplay[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
@@ -385,6 +387,8 @@ function OrdersPageContent() {
       setOrderItems([]);
       setCreateForm({ customer_name: '', customer_phone: '', delivery_address: '', delivery_notes: '', branch_id: createForm.branch_id });
       await fetchOrders();
+      // Close the dialog after successful creation
+      setShowCreateOrderDialog(false);
     } catch (err) {
       setCreateError((err as Error).message || 'Failed to create order.');
     } finally {
@@ -515,6 +519,15 @@ function OrdersPageContent() {
               </Button>
             </div>
             <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto">
+              <Button 
+                size="sm" 
+                onClick={() => setShowCreateOrderDialog(true)}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Create Order</span>
+                <span className="sm:hidden">+ New</span>
+              </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="whitespace-nowrap text-sm">
                 Dashboard
               </Button>
@@ -536,19 +549,46 @@ function OrdersPageContent() {
           </div>
         )}
 
-        <Card className="mb-4">
-          <CardContent className="p-4 sm:p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base sm:text-lg font-semibold text-brand-900">Create Order</h2>
-                <p className="text-xs sm:text-sm text-brand-600">Take phone or walk-in orders and add items manually.</p>
-              </div>
-              <Button variant="outline" size="sm" onClick={fetchProducts} disabled={productsLoading}>
-                <RefreshCw className={`w-4 h-4 mr-2 ${productsLoading ? 'animate-spin' : ''}`} />
-                Refresh Products
-              </Button>
-            </div>
+        {/* Orders List */}
+        <div className="space-y-3 sm:space-y-4">
+          {orders.length === 0 && !loading ? (
+            <Card>
+              <CardContent className="p-6 sm:p-8 text-center text-brand-500">
+                <ShoppingCart className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-4 opacity-50" />
+                <p>No orders found</p>
+              </CardContent>
+            </Card>
+          ) : (
+            orders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                riders={riders}
+                isExpanded={expandedOrder === order.id}
+                onToggleExpand={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                isEditing={editingOrderId === order.id}
+                editForm={editForm}
+                onStartEdit={() => handleStartEdit(order)}
+                onCancelEdit={handleCancelEdit}
+                onSaveEdit={handleSaveEdit}
+                onFormChange={handleFormChange}
+                actionLoading={actionLoading === order.id}
+                onAction={(action) => handleAction(action, order)}
+              />
+            ))
+          )}
+        </div>
+      </Container>
 
+      {/* Create Order Dialog */}
+      <Dialog open={showCreateOrderDialog} onOpenChange={setShowCreateOrderDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <h2 className="text-xl font-semibold">Create New Order</h2>
+            <p className="text-sm text-brand-600">Take phone or walk-in orders and add items manually.</p>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
             {productsError && (
               <div className="bg-danger-50 border border-danger-200 rounded-lg p-3 text-danger-700 text-sm">
                 {productsError}
@@ -621,7 +661,7 @@ function OrdersPageContent() {
                   placeholder="Address"
                 />
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <label className="text-sm font-medium text-brand-800">Delivery Notes</label>
                 <input
                   value={createForm.delivery_notes}
@@ -728,44 +768,17 @@ function OrdersPageContent() {
               )}
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowCreateOrderDialog(false)}>
+                Cancel
+              </Button>
               <Button onClick={handleCreateOrder} disabled={createLoading || orderItems.length === 0}>
                 {createLoading ? 'Creating...' : 'Create Order'}
               </Button>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Orders List - Using modern OrderCard component */}
-        <div className="space-y-3 sm:space-y-4">
-          {orders.length === 0 && !loading ? (
-            <Card>
-              <CardContent className="p-6 sm:p-8 text-center text-brand-500">
-                <ShoppingCart className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-4 opacity-50" />
-                <p>No orders found</p>
-              </CardContent>
-            </Card>
-          ) : (
-            orders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                riders={riders}
-                isExpanded={expandedOrder === order.id}
-                onToggleExpand={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
-                isEditing={editingOrderId === order.id}
-                editForm={editForm}
-                onStartEdit={() => handleStartEdit(order)}
-                onCancelEdit={handleCancelEdit}
-                onSaveEdit={handleSaveEdit}
-                onFormChange={handleFormChange}
-                actionLoading={actionLoading === order.id}
-                onAction={(action) => handleAction(action, order)}
-              />
-            ))
-          )}
-        </div>
-      </Container>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Rider Selection Dialog */}
       <Dialog open={showRiderDialog} onOpenChange={setShowRiderDialog}>
