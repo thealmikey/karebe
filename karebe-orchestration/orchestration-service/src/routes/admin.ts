@@ -5,6 +5,7 @@
 import { Router, Request, Response } from 'express';
 import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
+import bcrypt from 'bcryptjs';
 
 const router = Router();
 
@@ -53,10 +54,28 @@ router.post('/login', async (req: Request, res: Response) => {
       });
     }
 
-    // Verify password - check both plain password and hash
-    const isValidPassword = 
-      adminUser.password === password || 
-      adminUser.password_hash === password;
+    // Verify password using bcrypt
+    let isValidPassword = false;
+    let needsPasswordMigration = false;
+    
+    // First check bcrypt hash (proper way - starts with $2)
+    if (adminUser.password_hash && adminUser.password_hash.startsWith('$2')) {
+      isValidPassword = await bcrypt.compare(password, adminUser.password_hash);
+    } else if (adminUser.password_hash) {
+      // Legacy: check direct hash match for demo accounts
+      isValidPassword = adminUser.password_hash === password;
+      if (isValidPassword) {
+        needsPasswordMigration = true;
+      }
+    }
+    
+    // Fallback: check plain password (for legacy demo accounts - migrate on login)
+    if (!isValidPassword && adminUser.password) {
+      isValidPassword = adminUser.password === password;
+      if (isValidPassword) {
+        needsPasswordMigration = true;
+      }
+    }
 
     if (!isValidPassword) {
       logger.warn('Admin login failed - invalid password', { email: email.toLowerCase() });
@@ -64,6 +83,20 @@ router.post('/login', async (req: Request, res: Response) => {
         success: false,
         error: 'Invalid credentials',
       });
+    }
+
+    // Auto-migrate legacy passwords to bcrypt on successful login
+    if (needsPasswordMigration && adminUser.id) {
+      const newPasswordHash = await bcrypt.hash(password, 10);
+      await supabase
+        .from('admin_users')
+        .update({ 
+          password_hash: newPasswordHash,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', adminUser.id);
+      
+      logger.info('Migrated legacy password to bcrypt', { email: email.toLowerCase() });
     }
 
     logger.info('Admin login successful', { 
@@ -89,6 +122,116 @@ router.post('/login', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Login failed. Please try again.',
+    });
+  }
+});
+
+// =============================================================================
+// One-Time Admin Setup (for initial deployment)
+// =============================================================================
+
+/**
+ * POST /api/admin/setup
+ * One-time setup to create the first super admin.
+ * Only works when no admin users exist in the system.
+ * After first admin is created, this route becomes inactive.
+ */
+router.post('/setup', async (req: Request, res: Response) => {
+  try {
+    const { email, password, name, phone } = req.body;
+
+    if (!email || !password || !name) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email, password, and name are required',
+      });
+    }
+
+    // Validate password strength (minimum 8 characters)
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        error: 'Password must be at least 8 characters long',
+      });
+    }
+
+    // Check if any admin users already exist
+    const { count, error: countError } = await supabase
+      .from('admin_users')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      logger.error('Error checking for existing admins', { error: countError });
+      return res.status(500).json({
+        success: false,
+        error: 'Setup failed. Please try again.',
+      });
+    }
+
+    // If admins already exist, reject the setup request (return 404 to hide endpoint existence)
+    if (count && count > 0) {
+      logger.warn('Admin setup attempted but admins already exist', { count });
+      return res.status(404).json({
+        success: false,
+        error: 'Resource not found',
+      });
+    }
+
+    logger.info('Starting one-time admin setup', { email: email.toLowerCase() });
+
+    // Hash password with bcrypt
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Create the first super admin
+    const { data: adminUser, error: insertError } = await supabase
+      .from('admin_users')
+      .insert({
+        email: email.toLowerCase(),
+        password_hash: passwordHash,
+        name,
+        phone,
+        role: 'super_admin',
+        is_active: true,
+      })
+      .select('id, email, name, role, phone')
+      .single();
+
+    if (insertError) {
+      logger.error('Error creating initial admin', { error: insertError });
+      
+      if (insertError.code === '23505') {
+        return res.status(400).json({
+          success: false,
+          error: 'An admin with this email already exists',
+        });
+      }
+      
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to create admin user',
+      });
+    }
+
+    logger.info('Initial admin setup completed successfully', { 
+      adminId: adminUser.id, 
+      email: adminUser.email 
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Admin setup completed successfully. You can now login.',
+      data: {
+        id: adminUser.id,
+        email: adminUser.email,
+        name: adminUser.name,
+        role: adminUser.role,
+      },
+    });
+  } catch (error) {
+    logger.error('Admin setup error', { error });
+    res.status(500).json({
+      success: false,
+      error: 'Setup failed. Please try again.',
     });
   }
 });
@@ -138,8 +281,8 @@ router.post('/admins', async (req: Request, res: Response) => {
       });
     }
 
-    // Simple password hashing (in production, use bcrypt)
-    const passwordHash = `$2a$10${Buffer.from(password).toString('base64').substring(0, 22)}`;
+    // Hash password properly with bcrypt
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const { data, error } = await supabase
       .from('admin_users')
@@ -192,9 +335,9 @@ async function updateAdminUser(id: string, req: Request, res: Response) {
       updated_at: new Date().toISOString(),
     };
 
-    // Only update password if provided
+    // Only update password if provided - use proper bcrypt hashing
     if (password) {
-      updateData.password_hash = `$2a$10${Buffer.from(password).toString('base64').substring(0, 22)}`;
+      updateData.password_hash = await bcrypt.hash(password, 10);
     }
 
     // Remove undefined values
