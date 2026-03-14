@@ -35,6 +35,14 @@ interface Rider {
   is_active: boolean;
 }
 
+interface Branch {
+  id: string;
+  name: string;
+  address?: string;
+  is_main?: boolean;
+  is_active?: boolean;
+}
+
 function OrdersPageContent() {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
@@ -55,11 +63,15 @@ function OrdersPageContent() {
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
   const [createLoading, setCreateLoading] = useState(false);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [branchesLoading, setBranchesLoading] = useState(false);
+  const [branchesError, setBranchesError] = useState<string | null>(null);
   const [createForm, setCreateForm] = useState({
     customer_name: '',
     customer_phone: '',
     delivery_address: '',
     delivery_notes: '',
+    branch_id: '',
   });
   const [draftItem, setDraftItem] = useState({
     productId: '',
@@ -166,6 +178,40 @@ function OrdersPageContent() {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  const fetchBranches = async () => {
+    setBranchesLoading(true);
+    setBranchesError(null);
+    try {
+      const response = await fetch(`${orchestrationApiBase}/admin/branches`);
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to load branches');
+      }
+      const sorted = (result.data || []).sort((a: Branch, b: Branch) => {
+        if (a.is_main && !b.is_main) return -1;
+        if (!a.is_main && b.is_main) return 1;
+        return a.name.localeCompare(b.name);
+      });
+      setBranches(sorted);
+      if (!createForm.branch_id && sorted.length > 0) {
+        const preferred = user?.branchId && isUuid(user.branchId) ? user.branchId : '';
+        const preferredExists = preferred ? sorted.some((b) => b.id === preferred) : false;
+        setCreateForm((prev) => ({ ...prev, branch_id: preferredExists ? preferred : sorted[0].id }));
+      }
+    } catch (err) {
+      console.error('Failed to load branches:', err);
+      setBranchesError('Failed to load branches');
+    } finally {
+      setBranchesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBranches();
+  }, []);
+
+  const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
   function getActorId(userId?: string): string {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -289,6 +335,10 @@ function OrdersPageContent() {
       setCreateError('Quantity must be at least 1.');
       return;
     }
+    if (!isUuid(selectedProduct.id)) {
+      setCreateError('Selected product is missing a valid UUID. Please use live products from the database.');
+      return;
+    }
 
     const newItem: OrderItem = {
       product_id: selectedProduct.id,
@@ -318,6 +368,14 @@ function OrdersPageContent() {
       setCreateError('Delivery address is required.');
       return;
     }
+    if (!createForm.branch_id) {
+      setCreateError('Please select a branch.');
+      return;
+    }
+    if (!isUuid(createForm.branch_id)) {
+      setCreateError('Branch ID must be a valid UUID from the branch list.');
+      return;
+    }
     if (orderItems.length === 0) {
       setCreateError('Add at least one item.');
       return;
@@ -330,13 +388,14 @@ function OrdersPageContent() {
         customer_name: createForm.customer_name.trim() || null,
         delivery_address: createForm.delivery_address.trim(),
         delivery_notes: createForm.delivery_notes.trim() || null,
+        branch_id: createForm.branch_id,
         items: orderItems,
         total: orderTotal,
-        trigger_source: 'phone_call',
+        trigger_source: 'call_button',
       });
       setCreateSuccess('Order created successfully.');
       setOrderItems([]);
-      setCreateForm({ customer_name: '', customer_phone: '', delivery_address: '', delivery_notes: '' });
+      setCreateForm({ customer_name: '', customer_phone: '', delivery_address: '', delivery_notes: '', branch_id: createForm.branch_id });
       await fetchOrders();
     } catch (err) {
       setCreateError((err as Error).message || 'Failed to create order.');
@@ -508,6 +567,12 @@ function OrdersPageContent() {
               </div>
             )}
 
+            {branchesError && (
+              <div className="bg-danger-50 border border-danger-200 rounded-lg p-3 text-danger-700 text-sm">
+                {branchesError}
+              </div>
+            )}
+
             {createError && (
               <div className="bg-danger-50 border border-danger-200 rounded-lg p-3 text-danger-700 text-sm">
                 {createError}
@@ -521,6 +586,26 @@ function OrdersPageContent() {
             )}
 
             <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-brand-800">Branch</label>
+                <select
+                  value={createForm.branch_id}
+                  onChange={(e) => setCreateForm((prev) => ({ ...prev, branch_id: e.target.value }))}
+                  className="mt-1 w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+                  disabled={branchesLoading || branches.length === 0}
+                  required
+                >
+                  {branches.length === 0 ? (
+                    <option value="">No branches available</option>
+                  ) : (
+                    branches.map((branch) => (
+                      <option key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
               <div>
                 <label className="text-sm font-medium text-brand-800">Customer Name</label>
                 <input

@@ -64,12 +64,12 @@ export interface CreateAdminOrderInput {
   customer_name?: string | null;
   delivery_address?: string | null;
   delivery_notes?: string | null;
-  branch_id?: string | null;
+  branch_id: string;
   items: OrderItem[];
   total?: number;
   delivery_fee?: number;
   tax?: number;
-  trigger_source?: string;
+  trigger_source?: 'call_button' | 'cart_checkout' | 'whatsapp';
 }
 
 export async function getOrdersByStatus(status: OrderStatus, branchId?: string): Promise<Order[]> {
@@ -158,12 +158,12 @@ export async function createAdminOrder(input: CreateAdminOrderInput): Promise<Or
       customer_name: input.customer_name || null,
       delivery_address: input.delivery_address || '',
       delivery_notes: input.delivery_notes || null,
-      branch_id: input.branch_id || null,
+      branch_id: input.branch_id,
       delivery_fee: input.delivery_fee ?? 0,
       tax: input.tax ?? 0,
       total: input.total ?? computedTotal,
       items: input.items,
-      trigger_source: input.trigger_source || 'phone_call',
+      trigger_source: input.trigger_source || 'call_button',
     }),
   });
 
