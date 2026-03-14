@@ -109,7 +109,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO profiles (id, email, role, full_name)
 VALUES (
   '550e8400-e29b-41d4-a716-446655440001',
-  'admin@karebe.com',
+  'admin@karebe.local',
   'admin',
   'Admin User'
 )

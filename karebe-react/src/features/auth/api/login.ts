@@ -67,7 +67,7 @@ async function demoLogin(credentials: LoginCredentials): Promise<LoginResponse> 
     console.warn('[DemoLogin] User not found for:', credentials.username);
     return {
       success: false,
-      message: 'Invalid credentials. Available demo logins:\n• super-admin: owner@karebe.com / owner123\n• admin: admin@karebe.com / admin123\n• rider: rider@karebe.com / rider123\n• or use phone +254716854639 with PIN 1234',
+      message: 'Invalid credentials. Available demo logins:\n• super-admin: admin@karebe.local / adminlemon1234\n• admin (Wangige): wangige@karebe.local / wangigelemon1234\n• admin (Karura): karura@karebe.local / karuralemon1234',
     };
   }
 

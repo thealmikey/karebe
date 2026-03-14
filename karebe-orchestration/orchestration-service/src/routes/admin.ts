@@ -29,8 +29,9 @@ router.post('/login', async (req: Request, res: Response) => {
 
     // For demo purposes, check against demo accounts
     const demoAdmins: Record<string, { password: string; name: string; role: string }> = {
-      'admin@karebe.com': { password: 'admin123', name: 'Main Admin', role: 'super_admin' },
-      'manager@karebe.com': { password: 'manager123', name: 'Store Manager', role: 'manager' },
+      'admin@karebe.local': { password: 'adminlemon1234', name: 'Admin User', role: 'super_admin' },
+      'wangige@karebe.local': { password: 'wangigelemon1234', name: 'Wangige Admin', role: 'manager' },
+      'karura@karebe.local': { password: 'karuralemon1234', name: 'Karura Admin', role: 'manager' },
     };
 
     const admin = demoAdmins[email.toLowerCase()];

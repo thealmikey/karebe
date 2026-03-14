@@ -1,11 +1,11 @@
-# Karebe React - Demo Login Credentials
+# Karebe React - Login Credentials
 
-This document contains all the login credentials for the Karebe React demo system.
+This document contains the login credentials for the Karebe React system.
 
 ## Overview
 
-The demo system comes pre-seeded with realistic data including:
-- **4 User Accounts** with different roles
+The system comes pre-seeded with realistic data including:
+- **3 Admin Accounts** with different roles
 - **22 Products** across 6 categories
 - **3 Branches** (Wangige, Karura, City Center)
 - **10 Sample Orders** with various statuses
@@ -20,10 +20,10 @@ The demo system comes pre-seeded with realistic data including:
 
 | Field | Value |
 |-------|-------|
-| **Email** | `owner@karebe.com` |
-| **Password** | `owner123` |
+| **Email** | `admin@karebe.local` |
+| **Password** | `adminlemon1234` |
 | **Role** | Super Admin |
-| **Name** | John Karebe |
+| **Name** | Admin User |
 | **Phone** | +254712345678 |
 
 **Permissions:**
@@ -36,15 +36,15 @@ The demo system comes pre-seeded with realistic data including:
 
 ---
 
-### Branch Admin
+### Branch Admin - Wangige
 **Branch management** - Manage orders, stock, and riders for assigned branch.
 
 | Field | Value |
 |-------|-------|
-| **Email** | `admin@karebe.com` |
-| **Password** | `admin123` |
+| **Email** | `wangige@karebe.local` |
+| **Password** | `wangigelemon1234` |
 | **Role** | Branch Admin |
-| **Name** | Grace Muthoni |
+| **Name** | Wangige Admin |
 | **Phone** | +254723456789 |
 | **Branch** | Wangige Main |
 
@@ -57,56 +57,24 @@ The demo system comes pre-seeded with realistic data including:
 
 ---
 
-### Delivery Rider
-**Delivery portal** - View assigned deliveries and update delivery status.
+### Branch Admin - Karura
+**Branch management** - Manage orders, stock, and riders for assigned branch.
 
 | Field | Value |
 |-------|-------|
-| **Email** | `rider@karebe.com` |
-| **Password** | `rider123` |
-| **Role** | Rider |
-| **Name** | John Rider |
-| **Phone** | +254798765432 |
-| **PIN** | `1111` (for rider app login) |
-
-**Alternative Login (Phone):**
-- Phone: `+254711000111`
-- PIN: `1111`
+| **Email** | `karura@karebe.local` |
+| **Password** | `karuralemon1234` |
+| **Role** | Branch Admin |
+| **Name** | Karura Admin |
+| **Phone** | +254724567890 |
+| **Branch** | Karura Branch |
 
 **Permissions:**
-- View assigned deliveries
-- Update delivery status (picked up, in transit, delivered)
-- View delivery history
-- Customer contact information
-
----
-
-### Customer
-**Customer portal** - Browse products, place orders, and view order history.
-
-| Field | Value |
-|-------|-------|
-| **Email** | `customer@karebe.com` |
-| **Password** | `customer123` |
-| **Role** | Customer |
-| **Name** | Sarah Wanjiku |
-| **Phone** | +254734567890 |
-
-**Permissions:**
-- Browse product catalog
-- Add items to cart
-- Place orders
-- View order history
-- Track order status
-- Manage delivery addresses
-
-**Sample Orders:**
-This customer account has 10 sample orders with various statuses:
-- Delivered orders
-- Out for delivery
-- Processing
-- Pending
-- Cancelled
+- Manage assigned branch
+- Manage branch inventory/stock
+- View and manage branch orders
+- Assign riders to deliveries
+- View branch reports
 
 ---
 

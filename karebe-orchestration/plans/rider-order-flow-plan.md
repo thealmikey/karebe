@@ -3,7 +3,7 @@
 ## Current State Analysis
 
 ### Demo Login Credentials
-- **Rider Login**: `rider@karebe.com` / `rider123`
+- **Rider Login**: `wangige@karebe.local` / `wangigelemon1234`
 - **Name**: Peter Ochieng
 - **Phone**: +254711000111
 

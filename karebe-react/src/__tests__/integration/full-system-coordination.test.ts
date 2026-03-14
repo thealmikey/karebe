@@ -235,7 +235,7 @@ describe('Full System Coordination Tests', () => {
           phone: TEST_ACCOUNTS.rider.phone,
           vehicle_type: 'Motorcycle',
           license_plate: 'KBC 123A',
-          password: 'rider123',
+          password: 'wangigelemon1234',
         }),
       });
 
