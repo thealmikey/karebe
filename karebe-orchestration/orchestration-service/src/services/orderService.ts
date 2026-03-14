@@ -117,7 +117,7 @@ export class OrderService {
     // Create order
     const orderData = {
       status: OrderStatus.ORDER_SUBMITTED,
-      customer_phone: request.customer_phone,
+      customer_phone: request.customer_phone ?? null,
       customer_name: request.customer_name || null,
       delivery_address: request.delivery_address,
       delivery_notes: request.delivery_notes || null,

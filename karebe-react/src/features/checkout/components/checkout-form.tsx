@@ -14,7 +14,7 @@ const checkoutSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address'),
-  phone: z.string().min(9, 'Valid phone number is required'),
+  phone: z.string().optional(),
   deliveryMethod: z.enum(['delivery', 'pickup']),
   address: z.object({
     street: z.string(),

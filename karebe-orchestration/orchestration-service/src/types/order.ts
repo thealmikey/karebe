@@ -251,7 +251,7 @@ export function getAvailableActions(status: WorkflowStatus): WorkflowAction[] {
 // =============================================================================
 
 export interface CreateOrderRequest {
-  customer_phone: string;
+  customer_phone?: string;
   customer_name?: string;
   delivery_address: string;
   delivery_notes?: string;

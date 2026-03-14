@@ -1,27 +1,26 @@
 import { supabase } from '@/lib/supabase';
 import type { CreateOrderInput, CreateOrderResponse } from '../types';
-import { normalizePhone, toMpesaFormat, validatePhone } from '@/lib/phone';
+import { normalizePhone, toMpesaFormat } from '@/lib/phone';
 
 // Railway API URL
 const ORCHESTRATION_API = import.meta.env.VITE_ORCHESTRATION_API_URL || 'https://karebe-orchestration-production.up.railway.app';
 
 export async function createOrder(input: CreateOrderInput): Promise<CreateOrderResponse> {
   try {
-    // Validate and normalize phone number before sending to API
-    const phoneInput = input.phone || '';
-    if (phoneInput && !validatePhone(phoneInput)) {
-      throw new Error('Invalid phone number format. Please enter a valid Kenyan mobile number.');
+    // Very forgiving phone handling: normalize when possible, otherwise pass through
+    const phoneInput = (input.phone || '').trim();
+    let customerPhone: string | null = null;
+    if (phoneInput) {
+      const normalizedResult = normalizePhone(phoneInput);
+      customerPhone = normalizedResult.success ? normalizedResult.data : phoneInput;
     }
-    
-    const normalizedResult = normalizePhone(phoneInput);
-    const normalizedPhone = normalizedResult.success ? normalizedResult.data : '';
     
     // Call the Railway orchestration API
     const response = await fetch(`${ORCHESTRATION_API}/api/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        customer_phone: normalizedPhone,
+        ...(customerPhone ? { customer_phone: customerPhone } : {}),
         customer_name: input.customerName || null,
         delivery_address: input.deliveryAddress?.street || '',
         delivery_notes: input.notes || null,

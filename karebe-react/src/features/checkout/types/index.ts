@@ -8,7 +8,7 @@ export interface CheckoutFormData {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
+  phone?: string;
   
   // Delivery
   deliveryMethod: DeliveryMethod;

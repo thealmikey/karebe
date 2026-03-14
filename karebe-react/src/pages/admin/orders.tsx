@@ -356,10 +356,6 @@ function OrdersPageContent() {
   const handleCreateOrder = async () => {
     setCreateError(null);
     setCreateSuccess(null);
-    if (!createForm.customer_phone.trim()) {
-      setCreateError('Customer phone is required.');
-      return;
-    }
     if (orderItems.length === 0) {
       setCreateError('Add at least one item.');
       return;
@@ -368,7 +364,7 @@ function OrdersPageContent() {
     setCreateLoading(true);
     try {
       await createAdminOrder({
-        customer_phone: createForm.customer_phone.trim(),
+        customer_phone: createForm.customer_phone.trim() || null,
         customer_name: createForm.customer_name.trim() || null,
         delivery_address: createForm.delivery_address.trim() || null,
         delivery_notes: createForm.delivery_notes.trim() || null,

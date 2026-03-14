@@ -21,7 +21,7 @@ const router = Router();
 // =============================================================================
 
 const createOrderSchema = z.object({
-  customer_phone: z.string().min(10).max(20),
+  customer_phone: z.string().optional(),
   customer_name: z.string().optional(),
   delivery_address: z.string().min(5).optional().default('PENDING_ADDRESS'),
   delivery_notes: z.string().optional(),
@@ -128,28 +128,27 @@ router.post('/', async (req: Request, res: Response) => {
       });
     }
 
-    // Validate and normalize phone number
-    const phoneValidation = validatePhone(validation.data.customer_phone);
-    if (!phoneValidation) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid phone number. Please provide a valid Kenyan mobile number.',
-      });
-    }
+    const isPlaceholderPhone = (value: string): boolean => {
+      const normalized = value.trim().toUpperCase();
+      return normalized === 'PENDING_CALL' || normalized === 'PENDING_ADDRESS';
+    };
 
-    // Normalize phone to canonical E.164 format
-    const normalizedPhone = normalizePhone(validation.data.customer_phone);
-    if (!normalizedPhone.success) {
-      return res.status(400).json({
-        success: false,
-        error: normalizedPhone.error.message,
-      });
+    let normalizedPhone: string | null = null;
+    const rawPhone = validation.data.customer_phone?.trim() ?? '';
+    if (rawPhone && !isPlaceholderPhone(rawPhone)) {
+      const normalization = normalizePhone(rawPhone);
+      if (normalization.success) {
+        normalizedPhone = normalization.data;
+      } else {
+        // Very forgiving: keep raw input if it can't be normalized
+        normalizedPhone = rawPhone;
+      }
     }
 
     // Update the phone to canonical format before creating order
     const orderData = {
       ...validation.data,
-      customer_phone: normalizedPhone.data,
+      customer_phone: normalizedPhone,
       branch_id: resolvedBranchId,
     };
 
@@ -312,33 +311,19 @@ router.patch('/:id', async (req: Request, res: Response) => {
       if (trimmedPhone.length === 0) {
         request.customer_phone = '';
       } else {
-        const phoneValidation = validatePhone(trimmedPhone);
-        if (!phoneValidation.valid) {
-          return res.status(400).json({
-            success: false,
-            error: 'Validation failed',
-            details: phoneValidation.errors.map((message) => ({
-              code: 'invalid_phone',
-              path: ['customer_phone'],
-              message,
-            })),
-          });
+        const normalized = trimmedPhone.toUpperCase();
+        if (normalized === 'PENDING_CALL' || normalized === 'PENDING_ADDRESS') {
+          request.customer_phone = '';
+        } else {
+          const looksLikePhone = /^[0-9+]+$/.test(trimmedPhone);
+          if (looksLikePhone) {
+            const normalizedPhone = normalizePhone(trimmedPhone);
+            request.customer_phone = normalizedPhone.success ? normalizedPhone.data : trimmedPhone;
+          } else {
+            // Very forgiving: store as-is if it doesn't look like a phone number
+            request.customer_phone = trimmedPhone;
+          }
         }
-
-        const normalizedPhone = normalizePhone(trimmedPhone);
-        if (!normalizedPhone.valid) {
-          return res.status(400).json({
-            success: false,
-            error: 'Validation failed',
-            details: normalizedPhone.errors.map((message) => ({
-              code: 'invalid_phone',
-              path: ['customer_phone'],
-              message,
-            })),
-          });
-        }
-
-        request.customer_phone = normalizedPhone.data;
       }
     }
 

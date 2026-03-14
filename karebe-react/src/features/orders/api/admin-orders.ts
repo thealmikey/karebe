@@ -60,7 +60,7 @@ export interface OrderResponse {
 }
 
 export interface CreateAdminOrderInput {
-  customer_phone: string;
+  customer_phone?: string | null;
   customer_name?: string | null;
   delivery_address?: string | null;
   delivery_notes?: string | null;
@@ -150,11 +150,12 @@ export async function getOrderById(orderId: string): Promise<Order | null> {
 
 export async function createAdminOrder(input: CreateAdminOrderInput): Promise<Order> {
   const computedTotal = input.items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+  const trimmedPhone = input.customer_phone?.trim();
   const response = await fetch(`${ORCHESTRATION_API_URL}/orders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      customer_phone: input.customer_phone,
+      ...(trimmedPhone ? { customer_phone: trimmedPhone } : {}),
       customer_name: input.customer_name || null,
       delivery_address: input.delivery_address || 'PENDING_ADDRESS',
       delivery_notes: input.delivery_notes || null,
