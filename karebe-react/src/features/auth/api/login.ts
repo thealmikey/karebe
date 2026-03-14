@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase';
-import { demoUsers } from '@/lib/demo-data';
 import type { AuthUser, UserRole } from '../stores/auth-store';
 import { normalizePhone, safeParsePhone } from '@/lib/phone';
 
@@ -9,6 +8,7 @@ const ORCHESTRATION_API = import.meta.env.VITE_ORCHESTRATION_API_URL || 'https:/
 export interface LoginCredentials {
   username: string;
   password: string;
+  role?: 'admin' | 'rider';
 }
 
 export interface LoginResponse {
@@ -22,134 +22,75 @@ export interface LoginResponse {
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const isSupabaseConfigured = supabaseUrl && !supabaseUrl.includes('placeholder') && !supabaseUrl.includes('your-project');
 
-// Helper to simulate network delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-/**
- * Demo login using demo users
- */
-async function demoLogin(credentials: LoginCredentials): Promise<LoginResponse> {
-  await delay(300);
-
-  // DEBUG: Log what we're trying to match
-  console.log('[DemoLogin] Attempting login with:', { 
-    username: credentials.username, 
-    // Don't log actual password for security
-    passwordProvided: !!credentials.password 
-  });
-
-  // First try email match (existing behavior)
-  let user = demoUsers.find(
-    u => u.email === credentials.username && u.password === credentials.password
-  );
-
-  // DEBUG: Log demo users available for comparison
-  console.log('[DemoLogin] Available demo users:', demoUsers.map(u => ({
-    email: u.email,
-    phone: u.phone,
-    role: u.role,
-    name: u.name
-  })));
-
-  // If no email match, try phone match
-  if (!user) {
-    console.log('[DemoLogin] No email match, trying phone match...');
-    user = demoUsers.find(
-      u => u.phone === credentials.username && u.password === credentials.password
-    );
-    
-    if (user) {
-      console.log('[DemoLogin] Phone match found for:', user.phone);
-    }
-  }
-
-  if (!user) {
-    console.warn('[DemoLogin] User not found for:', credentials.username);
-    console.warn('[DemoLogin] Please check your credentials and try again');
-    return {
-      success: false,
-      message: 'Invalid credentials. Available demo logins:\n• super-admin: admin@karebe.local / adminlemon1234\n• admin (Wangige): wangige@karebe.local / wangigelemon1234\n• admin (Karura): karura@karebe.local / karuralemon1234',
-    };
-  }
-
-  console.log('[DemoLogin] Success for user:', { email: user.email, role: user.role, name: user.name });
-
-  const authUser: AuthUser = {
-    id: user.id,
-    email: user.email,
-    username: user.email,
-    name: user.name,
-    role: user.role as UserRole,
-    phone: user.phone,
-    branchId: user.branchId,
-    avatar: user.avatar,
-  };
-
-  return {
-    success: true,
-    user: authUser,
-    token: `demo-token-${user.id}`,
-  };
-}
-
 /**
  * Admin/Staff login via the API
  * This is used for admin, super-admin, and rider logins
  */
 export async function login(credentials: LoginCredentials): Promise<LoginResponse> {
   console.log('[Login API] Starting login process for username:', credentials.username);
+  console.log('[Login API] Role:', credentials.role || 'admin (default)');
   
-  // Try demo login first (works both in dev and production)
-  // This allows testing without requiring a backend API
-  console.log('[Login API] Attempting demo login...');
-  const demoResult = await demoLogin(credentials);
-  if (demoResult.success) {
-    return demoResult;
-  }
-
-  // If demo fails and Supabase is not configured, return demo error
+  // If Supabase is not configured, return error
   if (!isSupabaseConfigured) {
-    return demoResult;
+    console.error('[Login API] Supabase not configured - cannot authenticate');
+    return {
+      success: false,
+      message: 'Authentication service not configured. Please contact support.',
+    };
   }
 
-  // Supabase is configured - try the API login
+  // Use the correct endpoint based on role
+  const isRider = credentials.role === 'rider';
+  const endpoint = isRider ? '/api/riders/login' : '/api/admin/login';
+  
+  // Format the request body based on role
+  const requestBody = isRider
+    ? { phone: credentials.username, pin: credentials.password }
+    : { email: credentials.username, password: credentials.password };
+
+  console.log('[Login API] Calling API endpoint:', endpoint);
+  console.log('[Login API] Request body:', { ...requestBody, password: '***', pin: '***' });
+
   try {
-    console.log('[Login API] Demo login failed, attempting API login...');
-    console.log('[Login API] Calling orchestration API for authentication...');
-    
-    // Call the admin login API endpoint
-    const response = await fetch(`${ORCHESTRATION_API}/api/admin/login`, {
+    const response = await fetch(`${ORCHESTRATION_API}${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(credentials),
+      body: JSON.stringify(requestBody),
     });
 
     const data = await response.json();
-    console.log('[Login API] Received response from orchestration API');
+    console.log('[Login API] Received response - status:', response.status, 'data:', data);
 
     if (!response.ok || !data.success) {
-      console.error('[Login API] Login failed - Response status:', response.status);
-      console.error('[Login API] Error message:', data.message || 'Unknown error');
+      const errorMsg = data.error || data.message || 'Login failed. Please check your credentials.';
+      console.error('[Login API] Login failed - Response status:', response.status, 'Error:', errorMsg);
       return {
         success: false,
-        message: data.message || 'Login failed. Please check your credentials.',
+        message: errorMsg,
       };
     }
 
     // Map the API response to our AuthUser type
     console.log('[Login API] Login successful, processing user data...');
+    
+    // Handle rider response vs admin response
+    const userData = isRider ? data.rider : data.user;
+    const role = isRider ? 'rider' : (data.user?.role || 'admin');
+    
     const user: AuthUser = {
-      id: data.user.id,
-      email: data.user.email || '',
-      username: data.user.username,
-      name: data.user.name || data.user.username,
-      role: data.user.role as UserRole,
-      phone: data.user.phone,
-      branchId: data.user.branch_id,
-      avatar: data.user.avatar,
+      id: userData.id,
+      email: userData.email || (isRider ? userData.phone : '') || '',
+      username: isRider ? userData.phone : userData.username || userData.email,
+      name: userData.name || (isRider ? userData.phone : ''),
+      role: role as UserRole,
+      phone: userData.phone,
+      branchId: userData.branch_id || userData.branchId,
+      avatar: userData.avatar,
     };
+
+    console.log('[Login API] User mapped:', { id: user.id, role: user.role, name: user.name });
 
     return {
       success: true,
@@ -158,12 +99,10 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
     };
   } catch (error) {
     console.error('[Login API] EXCEPTION during login:');
-    console.error('[Login API] Error type:', error instanceof Error ? error.constructor.name : typeof error);
-    console.error('[Login API] Error message:', error instanceof Error ? error.message : String(error));
-    console.error('[Login API] Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('[Login API] Error:', error instanceof Error ? error.message : String(error));
     return {
       success: false,
-      message: 'An unexpected error occurred. Please try again.',
+      message: 'Network error. Please check your connection and try again.',
     };
   }
 }

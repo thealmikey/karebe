@@ -18,7 +18,7 @@ function LoginContent() {
   const handleLogin = async (credentials: { username: string; password: string }) => {
     console.log('[LoginPage] Form submitted with username:', credentials.username);
     console.log('[LoginPage] Selected role:', selectedRole);
-    await login(credentials);
+    await login({ ...credentials, role: selectedRole });
     // Navigation will be handled by the useEffect below that watches user changes
   };
 
