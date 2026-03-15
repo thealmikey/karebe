@@ -131,6 +131,14 @@ function LoginContent() {
             Create Admin Account →
           </a>
         </div>
+
+        {/* Login Link */}
+        <p className="text-center text-sm text-brand-500 mt-6">
+          Already have an account?{' '}
+          <a href="/admin/login" className="text-brand-600 hover:text-brand-700 font-medium">
+            Sign in
+          </a>
+        </p>
       </Container>
     </div>
   );
