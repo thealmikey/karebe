@@ -63,7 +63,7 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
     const data = await response.json();
     console.log('[Login API] Received response - status:', response.status, 'data:', data);
 
-    if (!response.ok || !data.success) {
+    if (!response.ok || (!data.success && !data.ok)) {
       const errorMsg = data.error || data.message || 'Login failed. Please check your credentials.';
       console.error('[Login API] Login failed - Response status:', response.status, 'Error:', errorMsg);
       return {
@@ -76,8 +76,18 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
     console.log('[Login API] Login successful, processing user data...');
     
     // Handle rider response vs admin response
-    const userData = isRider ? data.rider : data.user;
-    const role = isRider ? 'rider' : (data.user?.role || 'admin');
+    const userData = isRider
+      ? (data.rider || data.data || data.user)
+      : (data.user || data.data || data.admin);
+
+    if (!userData) {
+      return {
+        success: false,
+        message: 'Login succeeded but no user data was returned.',
+      };
+    }
+
+    const role = isRider ? 'rider' : (userData.role || data.role || 'admin');
     
     const user: AuthUser = {
       id: userData.id,
