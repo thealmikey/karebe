@@ -87,7 +87,8 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
       };
     }
 
-    const role = isRider ? 'rider' : (userData.role || data.role || 'admin');
+    const rawRole = isRider ? 'rider' : (userData.role || data.role || 'admin');
+    const role = String(rawRole).toLowerCase().replaceAll('_', '-') || 'admin';
     
     const user: AuthUser = {
       id: userData.id,
