@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Shield, Bike } from 'lucide-react';
 import { Container } from '@/components/layout/container';
@@ -122,12 +122,12 @@ function LoginContent() {
         {/* Register link */}
         <div className="mt-4 text-center">
           <span className="text-sm text-gray-600">Don't have an account? </span>
-          <a 
-            href="/admin/register" 
+          <Link
+            to="/admin/register"
             className="text-sm text-brand-600 hover:text-brand-700 font-medium underline"
           >
             Register here
-          </a>
+          </Link>
         </div>
       </Container>
     </div>
