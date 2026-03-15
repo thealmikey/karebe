@@ -1,9 +1,10 @@
 import { supabase } from '@/lib/supabase';
+import { orchestrationApiBase } from '@/lib/orchestration-api';
 import type { CreateOrderInput, CreateOrderResponse } from '../types';
 import { normalizePhone, toMpesaFormat } from '@/lib/phone';
 
-// Railway API URL
-const ORCHESTRATION_API = import.meta.env.VITE_ORCHESTRATION_API_URL || 'https://karebe-orchestration-production.up.railway.app';
+// Orchestration API base (includes /api, aligns with admin)
+const ORCHESTRATION_API = orchestrationApiBase;
 
 export async function createOrder(input: CreateOrderInput): Promise<CreateOrderResponse> {
   try {
@@ -16,7 +17,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     }
     
     // Call the Railway orchestration API
-    const response = await fetch(`${ORCHESTRATION_API}/api/orders`, {
+    const response = await fetch(`${ORCHESTRATION_API}/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -81,7 +82,7 @@ export async function initiateMpesaPayment(
       };
     }
     
-    const response = await fetch(`${ORCHESTRATION_API}/api/payments/daraja/stkpush`, {
+    const response = await fetch(`${ORCHESTRATION_API}/payments/daraja/stkpush`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
